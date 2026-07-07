@@ -1,0 +1,37 @@
+Metadata-Version: 2.2
+Name: ansys-pythonnet
+Version: 3.1.0rc6
+Summary: .NET and Mono integration for Python (Ansys, Inc. fork)
+Author-email: "ANSYS, Inc." <pyansys.maintainers@ansys.com>
+License: MIT
+Project-URL: Homepage, https://github.com/pyansys/ansys-pythonnet
+Project-URL: Sources, https://github.com/pyansys/ansys-pythonnet
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: C#
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Operating System :: MacOS :: MacOS X
+Requires-Python: <3.14,>=3.7
+Description-Content-Type: text/x-rst
+Requires-Dist: clr_loader<0.3.0,>=0.2.5
+
+Ansys fork of `pythonnet <https://github.com/pythonnet/pythonnet>`_.
+
+We will try to keep this up-to-date with pythonnet and upstream changes that might benefit the pythonnet community
+
+Changes relative to pythonnet:
+
+* Revert of `#1240 <https://github.com/pythonnet/pythonnet/pull/1240>`_.
+* Opt-into explicit interface wrapping, `#19 <https://github.com/ansys/ansys-pythonnet/pull/19>`_. This opts into the behavior that became the default in #1240 if ToPythonAs<T> is explicitly used
+* Option to bind explicit interface implementations, `#23 <https://github.com/ansys/ansys-pythonnet/pull/23>`_. This provides a runtime option to expose C# explicit interface implementations to Python.
+* Option to bind pep8 aliases `#24 <https://github.com/ansys/ansys-pythonnet/pull/24>`_.

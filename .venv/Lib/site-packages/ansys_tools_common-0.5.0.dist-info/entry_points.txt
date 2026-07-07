@@ -1,0 +1,3 @@
+[console_scripts]
+ansys-launcher = ansys.tools.common.launcher._cli:cli
+save-ansys-path = ansys.tools.common.path.save:cli
