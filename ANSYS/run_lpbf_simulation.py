@@ -2,30 +2,60 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 from pathlib import Path
 
-from ansys.mechanical.core import launch_mechanical
+from ansys.mechanical.core import App
 
 
-WORKSPACE_DIR = Path(r"C:\Users\018219877\Downloads\LBPF")
-ANSYS_DIR = WORKSPACE_DIR / "ANSYS"
+WORKSPACE_DIR = Path(__file__).resolve().parent.parent
+ANSYS_DIR = Path(__file__).resolve().parent
 DEFAULT_GEOMETRY_FILE = WORKSPACE_DIR / "Solidworks" / "Part1.step"
 TEMPLATE_FILE = ANSYS_DIR / "lpbfsim.mechdb"
 RUN_WORK_DIR = ANSYS_DIR / "run_work"
-MECHANICAL_EXECUTABLE = r"C:\Program Files\ANSYS Inc\v251\aisol\bin\winx64\AnsysWBU.exe"
+
+
+def find_mechanical_executable() -> Path:
+    configured_path = os.environ.get("ANSYS_MECHANICAL_EXECUTABLE")
+    if configured_path:
+        executable = Path(configured_path).expanduser().resolve()
+        if not executable.is_file():
+            raise FileNotFoundError(
+                "ANSYS_MECHANICAL_EXECUTABLE does not point to a file: "
+                f"{executable}"
+            )
+        return executable
+
+    install_root = Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "ANSYS Inc"
+    candidates = sorted(
+        install_root.glob(r"v*\aisol\bin\winx64\AnsysWBU.exe"),
+        reverse=True,
+    )
+    if not candidates:
+        raise FileNotFoundError(
+            "Could not find Ansys Mechanical. Set ANSYS_MECHANICAL_EXECUTABLE "
+            "to the full path of AnsysWBU.exe."
+        )
+    return candidates[0]
+
+
+MECHANICAL_EXECUTABLE = find_mechanical_executable()
+
+
+def mechanical_version_from_executable(executable: Path) -> int:
+    for parent in executable.parents:
+        if parent.name.startswith("v") and parent.name[1:].isdigit():
+            return int(parent.name[1:])
+    raise ValueError(f"Could not determine Ansys version from: {executable}")
+
+
+MECHANICAL_VERSION = mechanical_version_from_executable(MECHANICAL_EXECUTABLE)
 
 
 DELETE_GEOMETRY_SCRIPT = r'''
 existing_geometry_parts = ExtAPI.DataModel.GeoData.Assemblies[0].AllParts
 Model.DeleteParts(existing_geometry_parts)
-'''
-
-
-def open_template_script(template_file: Path) -> str:
-    return f'''
-TEMPLATE_FILE = {str(template_file)!r}
-ExtAPI.DataModel.Project.Open(TEMPLATE_FILE)
 '''
 
 
@@ -291,9 +321,36 @@ def prepare_template_copy(run_id: str) -> Path:
     return run_template
 
 
+def execute_writable_script(mechanical_session, script: str):
+    """Execute in Mechanical's full scripting context, not light/read-only mode."""
+    scope_name = "lpbf-workflow"
+    if not hasattr(mechanical_session, "script_engine"):
+        import clr
+
+        clr.AddReference("Ansys.Mechanical.Scripting")
+        import Ansys
+
+        script_engine = Ansys.Mechanical.Scripting.EngineFactory.CreateEngine()
+        script_engine.CreateScope(scope_name, False, False)
+        mechanical_session.script_engine = script_engine
+
+    result = mechanical_session.script_engine.ExecuteCode(
+        script,
+        scope_name,
+        False,
+        None,
+        None,
+    )
+    if result is None:
+        raise RuntimeError("Mechanical returned no script result.")
+    if result.Error is not None:
+        raise RuntimeError(f"Mechanical script failed: {result.Error.Message}")
+    return result.Value
+
+
 def run_stage(mechanical_session, stage_name: str, script: str):
     print(stage_name)
-    result = mechanical_session.run_python_script(script)
+    result = execute_writable_script(mechanical_session, script)
     if result:
         print(result)
     return result
@@ -373,14 +430,11 @@ def main() -> int:
 
     run_template = prepare_template_copy(args.run_id)
 
-    mechanical_session = launch_mechanical(
-        exec_file=MECHANICAL_EXECUTABLE,
-        transport_mode="insecure",
-        batch=False,
-        start_instance=True,
-        loglevel="INFO",
-        log_mechanical="pymechanical_log.txt",
-        verbose_mechanical=True,
+    # Embedding mode provides full writable object-model access. Remote gRPC
+    # script execution can be read-only for geometry import in Mechanical 2026.
+    mechanical_session = App(
+        version=MECHANICAL_VERSION,
+        private_appdata=False,
     )
 
     try:
@@ -390,13 +444,17 @@ def main() -> int:
         print(f"template_copy={run_template}")
         print(f"rotation_degrees=({args.rot_x}, {args.rot_y}, {args.rot_z})")
 
-        run_stage(mechanical_session, "opening template", open_template_script(run_template))
+        print("opening template")
+        mechanical_session.open(str(run_template), remove_lock=True)
+        # Upgrade an older-version database on the disposable run copy before
+        # executing model mutations against it.
+        mechanical_session.save()
         run_stage(mechanical_session, "deleting old geometry", DELETE_GEOMETRY_SCRIPT)
         run_stage(mechanical_session, "importing geometry", import_geometry_script(step_file))
         run_stage(mechanical_session, "meshing geometry", MESH_SCRIPT)
         run_stage(mechanical_session, "solving analyses", SOLVE_SCRIPT)
 
-        raw_result = mechanical_session.run_python_script(RESULTS_SCRIPT)
+        raw_result = execute_writable_script(mechanical_session, RESULTS_SCRIPT)
         stress_results = parse_result(raw_result)
         print(json.dumps(stress_results, indent=2))
         write_result_file(args, stress_results)
