@@ -1,0 +1,1145 @@
+
+ Ansys Mechanical Enterprise                       
+
+
+ *------------------------------------------------------------------*
+ |                                                                  |
+ |   W E L C O M E   T O   T H E   A N S Y S (R)  P R O G R A M     |
+ |                                                                  |
+ *------------------------------------------------------------------*
+
+
+
+
+ ***************************************************************
+ *         ANSYS MAPDL 2025 R1          LEGAL NOTICES          *
+ ***************************************************************
+ *                                                             *
+ * Copyright 1971-2025 Ansys, Inc.  All rights reserved.       *
+ * Unauthorized use, distribution or duplication is            *
+ * prohibited.                                                 *
+ *                                                             *
+ * Ansys is a registered trademark of Ansys, Inc. or its       *
+ * subsidiaries in the United States or other countries.       *
+ * See the Ansys, Inc. online documentation or the Ansys, Inc. *
+ * documentation CD or online help for the complete Legal      *
+ * Notice.                                                     *
+ *                                                             *
+ ***************************************************************
+ *                                                             *
+ * THIS ANSYS SOFTWARE PRODUCT AND PROGRAM DOCUMENTATION       *
+ * INCLUDE TRADE SECRETS AND CONFIDENTIAL AND PROPRIETARY      *
+ * PRODUCTS OF ANSYS, INC., ITS SUBSIDIARIES, OR LICENSORS.    *
+ * The software products and documentation are furnished by    *
+ * Ansys, Inc. or its subsidiaries under a software license    *
+ * agreement that contains provisions concerning               *
+ * non-disclosure, copying, length and nature of use,          *
+ * compliance with exporting laws, warranties, disclaimers,    *
+ * limitations of liability, and remedies, and other           *
+ * provisions.  The software products and documentation may be *
+ * used, disclosed, transferred, or copied only in accordance  *
+ * with the terms and conditions of that software license      *
+ * agreement.                                                  *
+ *                                                             *
+ * Ansys, Inc. is a UL registered                              *
+ * ISO 9001:2015 company.                                      *
+ *                                                             *
+ ***************************************************************
+ *                                                             *
+ * This product is subject to U.S. laws governing export and   *
+ * re-export.                                                  *
+ *                                                             *
+ * For U.S. Government users, except as specifically granted   *
+ * by the Ansys, Inc. software license agreement, the use,     *
+ * duplication, or disclosure by the United States Government  *
+ * is subject to restrictions stated in the Ansys, Inc.        *
+ * software license agreement and FAR 12.212 (for non-DOD      *
+ * licenses).                                                  *
+ *                                                             *
+ ***************************************************************
+
+ 2025 R1 
+     
+ Point Releases and Patches installed:   
+     
+ Ansys Service Pack 2025 R1.01   
+ Ansys, Inc. License Manager 2025 R1 
+ Ansys, Inc. License Manager 2025 R1.01  
+ CFD-Post only 2025 R1   
+ CFD-Post only 2025 R1.01
+ Core WB Files 2025 R1   
+ Core WB Files 2025 R1.01
+ CFX (includes CFD-Post) 2025 R1 
+ CFX (includes CFD-Post) 2025 R1.01  
+ Chemkin 2025 R1 
+ Chemkin 2025 R1.01  
+ EnSight 2025 R1 
+ EnSight 2025 R1.01  
+ FENSAP-ICE 2025 R1  
+ FENSAP-ICE 2025 R1.01   
+ Fluent (includes CFD-Post) 2025 R1  
+ Fluent (includes CFD-Post) 2025 R1.01   
+ Polyflow (includes CFD-Post) 2025 R1
+ Polyflow (includes CFD-Post) 2025 R1.01 
+ Forte (includes EnSight) 2025 R1
+ Forte (includes EnSight) 2025 R1.01 
+ ICEM CFD 2025 R1
+ ICEM CFD 2025 R1.01 
+ TurboGrid 2025 R1   
+ TurboGrid 2025 R1.01
+ Speos 2025 R1   
+ Speos 2025 R1.01
+ SpaceClaim 2025 R1  
+ SpaceClaim 2025 R1.01   
+ Catia, Version 5 Geometry Interface 2025 R1 
+ Catia, Version 5 Geometry Interface 2025 R1.01  
+ Speos HPC 2025 R1   
+ Speos HPC 2025 R1.01
+ optiSLang 2025 R1   
+ optiSLang 2025 R1.01
+ Additive 2025 R1
+ Additive 2025 R1.01 
+ Aqwa 2025 R1
+ Aqwa 2025 R1.01 
+ Autodyn 2025 R1 
+ Autodyn 2025 R1.01  
+ Customization Files for User Programmable Features 2025 R1  
+ Customization Files for User Programmable Features 2025 R1.01   
+ LS-DYNA 2025 R1 
+ LS-DYNA 2025 R1.01  
+ Mechanical Products 2025 R1 
+ Mechanical Products 2025 R1.01  
+ Motion 2025 R1  
+ Motion 2025 R1.01   
+ Sherlock 2025 R1
+ Sherlock 2025 R1.01 
+ Sound - SAS 2025 R1 
+ Sound - SAS 2025 R1.01  
+
+
+          *****  MAPDL COMMAND LINE ARGUMENTS  *****
+  BATCH MODE REQUESTED (-b)    = NOLIST
+  INPUT FILE COPY MODE (-c)    = COPY
+  DISTRIBUTED MEMORY PARALLEL REQUESTED
+       4 PARALLEL PROCESSES REQUESTED WITH SINGLE THREAD PER PROCESS
+    TOTAL OF     4 CORES REQUESTED
+  INPUT FILE NAME              = CONIN$
+  OUTPUT FILE NAME             = C:\Users\018219877\Downloads\LBPF\ANSYS\lpbfsim_Mech_Files\StaticStructural_2\file3.out
+  START-UP FILE MODE           = NOREAD
+  STOP FILE MODE               = NOREAD
+  ADDITIVE MANUFACTURING MODULE REQUESTED
+
+ RELEASE= 2025 R1              BUILD= 25.1      UP20250123   VERSION=WINDOWS x64 
+ CURRENT JOBNAME=file3  11:16:18  APR 04, 2026 CP=      0.391
+
+
+ *****  MAPDL SOLUTION ROUTINE  *****
+
+ PRINTOUT RESUMED BY /GOP
+
+                      L O A D   S T E P   O P T I O N S
+
+   MAXIMUM NUMBER OF EQUILIBRIUM ITERATIONS. . . .    15
+   STEP CHANGE BOUNDARY CONDITIONS . . . . . . . .    NO
+   LINE SEARCH . . . . . . . . . . . . . . . . . .    ON
+   TERMINATE ANALYSIS IF NOT CONVERGED . . . . . .YES (EXIT)  
+   CONVERGENCE CONTROLS. . . . . . . . . . . . . .USE DEFAULTS
+   COPY INTEGRATION POINT VALUES TO NODE . . . . .YES, FOR ELEMENTS WITH
+                                                  ACTIVE MAT. NONLINEARITIES
+   PRINT OUTPUT CONTROLS . . . . . . . . . . . . .NO PRINTOUT
+   DATABASE OUTPUT CONTROLS
+      ITEM     FREQUENCY   COMPONENT
+       ALL       NONE               
+      NSOL        ALL               
+      RSOL        ALL               
+      ETMP        ALL               
+      STRS        ALL               
+      EPEL        ALL               
+      EPPL        ALL               
+      EPTH        ALL               
+
+ MAXIMUM NUMBER OF EQUILIBRIUM ITERATIONS HAS BEEN MODIFIED              
+  TO BE, NEQIT = 25, BY SOLUTION CONTROL LOGIC.                          
+
+                        A D D I T I V E   S T E P
+
+   STEP TYPE . . . . . . . . . . . . . . . . . . .BUILD
+   MESH LAYER HEIGHT . . . . . . . . . . . . . . . 0.30000E-03
+   END LAYER NUMBER. . . . . . . . . . . . . . . .    13
+   NUMBER OF STEPS TO APPLY HEATING. . . . . . . .AS SPECIFIED IN THE THERMAL ANALYSIS
+   NUMBER OF STEPS BETWEEN LAYERS. . . . . . . . .AS SPECIFIED IN THE THERMAL ANALYSIS
+
+   LAYER . . . . . . . . . . . . . . . . . . . . .     1
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .     1
+   ACTION. . . . . . . . . . . . . . . . . . . . .APPLY HEAT
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . . 0.10412E-01
+   TIME AT END OF LOAD STEP. . . . . . . . . . . . 0.10412E-01
+   TIME STEP SIZE. . . . . . . . . . . . . . . . . 0.52059E-02
+
+
+ *** WARNING ***                         CP =       1.781   TIME= 11:16:22
+ Material property ALPX of material 2 of element 8191 is evaluated at a  
+ temperature of 368.150126, which is below the supplied temperature      
+ range.  Temperature range checking terminates.                          
+
+
+  *** MASS SUMMARY BY ELEMENT TYPE ***
+
+  TYPE      MASS
+     2  0.115934E-04
+ AN AVERAGE OF THE X-, Y-, AND Z-DIRECTION MASS TERMS ARE USED
+     FORCE CONVERGENCE VALUE  =   4738.      CRITERION=   23.69    
+
+
+  Memory allocated on only this MPI rank (rank     3)
+  -------------------------------------------------------------------
+  Equation solver memory allocated                     =    42.450 MB
+  Equation solver memory required for in-core mode     =    40.462 MB
+  Equation solver memory required for out-of-core mode =    11.281 MB
+  Total (solver and non-solver) memory allocated       =   201.227 MB
+
+ *** NOTE ***                            CP =       2.703   TIME= 11:16:23
+ The Distributed Sparse Matrix Solver is currently running in the        
+ in-core memory mode.  This memory mode uses the most amount of memory   
+ in order to avoid using the hard drive as much as possible, which most  
+ often results in the fastest solution time.  This mode is recommended   
+ if enough physical memory is present to accommodate all of the solver   
+ data.                                                                   
+     DISP CONVERGENCE VALUE   =  0.1115E-04  CRITERION=  0.5576E-06
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1115E-04
+     DISP CONVERGENCE VALUE   =  0.1115E-04  CRITERION=  0.5576E-06
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1115E-04
+     FORCE CONVERGENCE VALUE  =  0.1156E-08  CRITERION=  0.5000E-04 <<< CONVERGED
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.1119E-09
+     DISP CONVERGENCE VALUE   =  0.1119E-09  CRITERION=  0.5576E-06 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.1119E-09
+     FORCE CONVERGENCE VALUE  =  0.2090E-10  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+
+   *** ELEMENT RESULT CALCULATION TIMES
+     TYPE    NUMBER   ENAME      TOTAL CP  AVE CP
+
+        1      3440  SOLID185      0.344   0.000100
+        2       948  SOLID185      0.047   0.000049
+        3      1600  SOLID186      0.312   0.000195
+
+   *** NODAL LOAD CALCULATION TIMES
+     TYPE    NUMBER   ENAME      TOTAL CP  AVE CP
+
+        1      3440  SOLID185      0.000   0.000000
+        2       948  SOLID185      0.016   0.000016
+        3      1600  SOLID186      0.016   0.000010
+ *** LOAD STEP     1   SUBSTEP     1  COMPLETED.    CUM ITER =      2
+ *** TIME =  0.520593E-02     TIME INC =  0.520593E-02
+
+     FORCE CONVERGENCE VALUE  =   142.5      CRITERION=  0.7123    
+     DISP CONVERGENCE VALUE   =  0.3419E-06  CRITERION=  0.5576E-06 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.3419E-06
+     DISP CONVERGENCE VALUE   =  0.3419E-06  CRITERION=  0.5576E-06 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.3419E-06
+     FORCE CONVERGENCE VALUE  =  0.2556E-10  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP     1   SUBSTEP     2  COMPLETED.    CUM ITER =      3
+ *** TIME =  0.104119E-01     TIME INC =  0.520593E-02
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .     2
+   ACTION. . . . . . . . . . . . . . . . . . . . .COOL BETWEEN LAYERS
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . .  20.856    
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  20.866    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . .  10.428    
+
+     FORCE CONVERGENCE VALUE  =   2701.      CRITERION=   13.50    
+     DISP CONVERGENCE VALUE   =  0.1768E-04  CRITERION=  0.8841E-06
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1768E-04
+     DISP CONVERGENCE VALUE   =  0.1768E-04  CRITERION=  0.8841E-06
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1768E-04
+     FORCE CONVERGENCE VALUE  =  0.3954E-04  CRITERION=  0.5000E-04 <<< CONVERGED
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.2635E-09
+     DISP CONVERGENCE VALUE   =  0.2635E-09  CRITERION=  0.8841E-06 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.2635E-09
+     FORCE CONVERGENCE VALUE  =  0.1388E-08  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP     2   SUBSTEP     1  COMPLETED.    CUM ITER =      5
+ *** TIME =   10.4383         TIME INC =   10.4279    
+
+     FORCE CONVERGENCE VALUE  =   260.5      CRITERION=   1.303    
+     DISP CONVERGENCE VALUE   =  0.7438E-06  CRITERION=  0.8841E-06 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.7438E-06
+     DISP CONVERGENCE VALUE   =  0.7438E-06  CRITERION=  0.8841E-06 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.7438E-06
+     FORCE CONVERGENCE VALUE  =  0.2189E-08  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP     2   SUBSTEP     2  COMPLETED.    CUM ITER =      6
+ *** TIME =   20.8661         TIME INC =   10.4279    
+
+   LAYER . . . . . . . . . . . . . . . . . . . . .     2
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .     3
+   ACTION. . . . . . . . . . . . . . . . . . . . .APPLY HEAT
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . . 0.10412E-01
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  20.877    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . . 0.52059E-02
+
+     FORCE CONVERGENCE VALUE  =   875.4      CRITERION=   4.377    
+     DISP CONVERGENCE VALUE   =  0.1414E-04  CRITERION=  0.8841E-06
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1414E-04
+     DISP CONVERGENCE VALUE   =  0.1414E-04  CRITERION=  0.8841E-06
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1414E-04
+     FORCE CONVERGENCE VALUE  =  0.4449E-04  CRITERION=  0.5000E-04 <<< CONVERGED
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.1382E-08
+     DISP CONVERGENCE VALUE   =  0.1382E-08  CRITERION=  0.8841E-06 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.1382E-08
+     FORCE CONVERGENCE VALUE  =  0.5278E-08  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP     3   SUBSTEP     1  COMPLETED.    CUM ITER =      8
+ *** TIME =   20.8713         TIME INC =  0.520590E-02
+
+     FORCE CONVERGENCE VALUE  =   137.2      CRITERION=  0.6103    
+     DISP CONVERGENCE VALUE   =  0.4265E-05  CRITERION=  0.8841E-06
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.4265E-05
+     DISP CONVERGENCE VALUE   =  0.4265E-05  CRITERION=  0.8841E-06
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.4265E-05
+     FORCE CONVERGENCE VALUE  =  0.1436E-04  CRITERION=  0.5000E-04 <<< CONVERGED
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.5998E-09
+     DISP CONVERGENCE VALUE   =  0.5998E-09  CRITERION=  0.8841E-06 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.5998E-09
+     FORCE CONVERGENCE VALUE  =  0.2200E-08  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP     3   SUBSTEP     2  COMPLETED.    CUM ITER =     10
+ *** TIME =   20.8765         TIME INC =  0.520590E-02
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .     4
+   ACTION. . . . . . . . . . . . . . . . . . . . .COOL BETWEEN LAYERS
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . .  20.856    
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  41.732    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . .  10.428    
+
+     FORCE CONVERGENCE VALUE  =   260.7      CRITERION=  0.9056    
+     DISP CONVERGENCE VALUE   =  0.1759E-04  CRITERION=  0.8841E-06
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1759E-04
+     DISP CONVERGENCE VALUE   =  0.1759E-04  CRITERION=  0.8841E-06
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1759E-04
+     FORCE CONVERGENCE VALUE  =   15.22      CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.9101E-04
+     DISP CONVERGENCE VALUE   =  0.1396E-04  CRITERION=  0.1578E-05
+     LINE SEARCH PARAMETER =  0.1534     SCALED MAX DOF INC =  0.1396E-04
+     FORCE CONVERGENCE VALUE  =   5.640      CRITERION=  0.5000E-04
+    EQUIL ITER   3 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1625E-05
+     DISP CONVERGENCE VALUE   =  0.1232E-05  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =  0.7580     SCALED MAX DOF INC =  0.1232E-05
+     FORCE CONVERGENCE VALUE  =   1.160      CRITERION=  0.5000E-04
+    EQUIL ITER   4 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.2663E-06
+     DISP CONVERGENCE VALUE   =  0.2652E-06  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =  0.9957     SCALED MAX DOF INC = -0.2652E-06
+     FORCE CONVERGENCE VALUE  =  0.1410E-01  CRITERION=  0.5000E-04
+    EQUIL ITER   5 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.3453E-08
+     DISP CONVERGENCE VALUE   =  0.3453E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.3453E-08
+     FORCE CONVERGENCE VALUE  =  0.2339E-04  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   5
+ *** LOAD STEP     4   SUBSTEP     1  COMPLETED.    CUM ITER =     15
+ *** TIME =   31.3044         TIME INC =   10.4279    
+ *** MAX PLASTIC STRAIN STEP = 0.1131E-02   CRITERION =  1.000    
+
+     FORCE CONVERGENCE VALUE  =   8.395      CRITERION=  0.4198E-01
+     DISP CONVERGENCE VALUE   =  0.2477E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.2477E-07
+     DISP CONVERGENCE VALUE   =  0.2477E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.2477E-07
+     FORCE CONVERGENCE VALUE  =  0.5417E-02  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.1183E-09
+     DISP CONVERGENCE VALUE   =  0.1183E-09  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.1183E-09
+     FORCE CONVERGENCE VALUE  =  0.2321E-08  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP     4   SUBSTEP     2  COMPLETED.    CUM ITER =     17
+ *** TIME =   41.7322         TIME INC =   10.4279    
+ *** MAX PLASTIC STRAIN STEP = 0.3966E-06   CRITERION =  1.000    
+
+   LAYER . . . . . . . . . . . . . . . . . . . . .     3
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .     5
+   ACTION. . . . . . . . . . . . . . . . . . . . .APPLY HEAT
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . . 0.10412E-01
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  41.743    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . . 0.52059E-02
+
+     FORCE CONVERGENCE VALUE  =   55.64      CRITERION=  0.2782    
+     DISP CONVERGENCE VALUE   =  0.2086E-05  CRITERION=  0.1578E-05
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.2086E-05
+     DISP CONVERGENCE VALUE   =  0.2086E-05  CRITERION=  0.1578E-05
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.2086E-05
+     FORCE CONVERGENCE VALUE  =  0.6804E-05  CRITERION=  0.5000E-04 <<< CONVERGED
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.6025E-10
+     DISP CONVERGENCE VALUE   =  0.6025E-10  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.6025E-10
+     FORCE CONVERGENCE VALUE  =  0.1517E-09  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP     5   SUBSTEP     1  COMPLETED.    CUM ITER =     19
+ *** TIME =   41.7375         TIME INC =  0.520590E-02
+
+     FORCE CONVERGENCE VALUE  =   9.316      CRITERION=  0.4658E-01
+     DISP CONVERGENCE VALUE   =  0.1868E-06  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.1868E-06
+     DISP CONVERGENCE VALUE   =  0.1868E-06  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.1868E-06
+     FORCE CONVERGENCE VALUE  =  0.6500E-06  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP     5   SUBSTEP     2  COMPLETED.    CUM ITER =     20
+ *** TIME =   41.7427         TIME INC =  0.520590E-02
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .     6
+   ACTION. . . . . . . . . . . . . . . . . . . . .COOL BETWEEN LAYERS
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . .  20.856    
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  62.598    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . .  10.428    
+
+     FORCE CONVERGENCE VALUE  =   56.93      CRITERION=  0.2822    
+     DISP CONVERGENCE VALUE   =  0.4555E-05  CRITERION=  0.1578E-05
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.4555E-05
+     DISP CONVERGENCE VALUE   =  0.4555E-05  CRITERION=  0.1578E-05
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.4555E-05
+     FORCE CONVERGENCE VALUE  =   1.431      CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.1199E-06
+     DISP CONVERGENCE VALUE   =  0.1199E-06  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.1199E-06
+     FORCE CONVERGENCE VALUE  =  0.7611E-02  CRITERION=  0.5000E-04
+    EQUIL ITER   3 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.1347E-08
+     DISP CONVERGENCE VALUE   =  0.1347E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.1347E-08
+     FORCE CONVERGENCE VALUE  =  0.4624E-05  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   3
+ *** LOAD STEP     6   SUBSTEP     1  COMPLETED.    CUM ITER =     23
+ *** TIME =   52.1705         TIME INC =   10.4279    
+ *** MAX PLASTIC STRAIN STEP = 0.2226E-03   CRITERION =  1.000    
+
+     FORCE CONVERGENCE VALUE  =  0.9790      CRITERION=  0.4895E-02
+     DISP CONVERGENCE VALUE   =  0.3186E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.3186E-07
+     DISP CONVERGENCE VALUE   =  0.3186E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.3186E-07
+     FORCE CONVERGENCE VALUE  =  0.1776E-01  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.1408E-08
+     DISP CONVERGENCE VALUE   =  0.1407E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =  0.9997     SCALED MAX DOF INC = -0.1407E-08
+     FORCE CONVERGENCE VALUE  =  0.6155E-05  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP     6   SUBSTEP     2  COMPLETED.    CUM ITER =     25
+ *** TIME =   62.5984         TIME INC =   10.4279    
+ *** MAX PLASTIC STRAIN STEP = 0.2771E-05   CRITERION =  1.000    
+
+   LAYER . . . . . . . . . . . . . . . . . . . . .     4
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .     7
+   ACTION. . . . . . . . . . . . . . . . . . . . .APPLY HEAT
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . . 0.10412E-01
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  62.609    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . . 0.52059E-02
+
+     FORCE CONVERGENCE VALUE  =   21.16      CRITERION=  0.1058    
+     DISP CONVERGENCE VALUE   =  0.4964E-06  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.4964E-06
+     DISP CONVERGENCE VALUE   =  0.4964E-06  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.4964E-06
+     FORCE CONVERGENCE VALUE  =  0.1927E-05  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP     7   SUBSTEP     1  COMPLETED.    CUM ITER =     26
+ *** TIME =   62.6036         TIME INC =  0.520590E-02
+
+     FORCE CONVERGENCE VALUE  =   2.522      CRITERION=  0.1261E-01
+     DISP CONVERGENCE VALUE   =  0.4301E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.4301E-07
+     DISP CONVERGENCE VALUE   =  0.4301E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.4301E-07
+     FORCE CONVERGENCE VALUE  =  0.1067E-06  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP     7   SUBSTEP     2  COMPLETED.    CUM ITER =     27
+ *** TIME =   62.6088         TIME INC =  0.520590E-02
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .     8
+   ACTION. . . . . . . . . . . . . . . . . . . . .COOL BETWEEN LAYERS
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . .  20.856    
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  83.465    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . .  10.428    
+
+     FORCE CONVERGENCE VALUE  =   67.39      CRITERION=  0.3357    
+     DISP CONVERGENCE VALUE   =  0.1515E-05  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1515E-05
+     DISP CONVERGENCE VALUE   =  0.1515E-05  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1515E-05
+     FORCE CONVERGENCE VALUE  =  0.6493      CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.2747E-07
+     DISP CONVERGENCE VALUE   =  0.2747E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.2747E-07
+     FORCE CONVERGENCE VALUE  =  0.2610E-02  CRITERION=  0.5000E-04
+    EQUIL ITER   3 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1139E-09
+     DISP CONVERGENCE VALUE   =  0.1139E-09  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1139E-09
+     FORCE CONVERGENCE VALUE  =  0.5410E-07  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   3
+ *** LOAD STEP     8   SUBSTEP     1  COMPLETED.    CUM ITER =     30
+ *** TIME =   73.0368         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.9829E-04   CRITERION =  1.000    
+
+     FORCE CONVERGENCE VALUE  =   2.449      CRITERION=  0.1224E-01
+     DISP CONVERGENCE VALUE   =  0.3086E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.3086E-07
+     DISP CONVERGENCE VALUE   =  0.3086E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.3086E-07
+     FORCE CONVERGENCE VALUE  =  0.1712E-01  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.7241E-09
+     DISP CONVERGENCE VALUE   =  0.7241E-09  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.7241E-09
+     FORCE CONVERGENCE VALUE  =  0.6511E-06  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP     8   SUBSTEP     2  COMPLETED.    CUM ITER =     32
+ *** TIME =   83.4648         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.2523E-05   CRITERION =  1.000    
+
+   LAYER . . . . . . . . . . . . . . . . . . . . .     5
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .     9
+   ACTION. . . . . . . . . . . . . . . . . . . . .APPLY HEAT
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . . 0.10412E-01
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  83.475    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . . 0.52059E-02
+
+     FORCE CONVERGENCE VALUE  =   39.97      CRITERION=  0.1999    
+     DISP CONVERGENCE VALUE   =  0.3699E-06  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.3699E-06
+     DISP CONVERGENCE VALUE   =  0.3699E-06  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.3699E-06
+     FORCE CONVERGENCE VALUE  =  0.1374E-05  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP     9   SUBSTEP     1  COMPLETED.    CUM ITER =     33
+ *** TIME =   83.4701         TIME INC =  0.520600E-02
+
+     FORCE CONVERGENCE VALUE  =   4.677      CRITERION=  0.2338E-01
+     DISP CONVERGENCE VALUE   =  0.4485E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.4485E-07
+     DISP CONVERGENCE VALUE   =  0.4485E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.4485E-07
+     FORCE CONVERGENCE VALUE  =  0.1606E-06  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP     9   SUBSTEP     2  COMPLETED.    CUM ITER =     34
+ *** TIME =   83.4753         TIME INC =  0.520600E-02
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    10
+   ACTION. . . . . . . . . . . . . . . . . . . . .COOL BETWEEN LAYERS
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . .  20.856    
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  104.33    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . .  10.428    
+
+     FORCE CONVERGENCE VALUE  =   29.41      CRITERION=  0.1442    
+     DISP CONVERGENCE VALUE   =  0.7840E-06  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.7840E-06
+     DISP CONVERGENCE VALUE   =  0.7840E-06  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.7840E-06
+     FORCE CONVERGENCE VALUE  =  0.2294      CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1082E-07
+     DISP CONVERGENCE VALUE   =  0.1082E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1082E-07
+     FORCE CONVERGENCE VALUE  =  0.9562E-03  CRITERION=  0.5000E-04
+    EQUIL ITER   3 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.5103E-10
+     DISP CONVERGENCE VALUE   =  0.5103E-10  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.5103E-10
+     FORCE CONVERGENCE VALUE  =  0.1742E-07  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   3
+ *** LOAD STEP    10   SUBSTEP     1  COMPLETED.    CUM ITER =     37
+ *** TIME =   93.9033         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.5829E-04   CRITERION =  1.000    
+
+     FORCE CONVERGENCE VALUE  =   1.320      CRITERION=  0.6601E-02
+     DISP CONVERGENCE VALUE   =  0.1190E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1190E-07
+     DISP CONVERGENCE VALUE   =  0.1190E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1190E-07
+     FORCE CONVERGENCE VALUE  =  0.6625E-02  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.3182E-09
+     DISP CONVERGENCE VALUE   =  0.3182E-09  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.3182E-09
+     FORCE CONVERGENCE VALUE  =  0.3349E-06  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP    10   SUBSTEP     2  COMPLETED.    CUM ITER =     39
+ *** TIME =   104.331         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.1455E-05   CRITERION =  1.000    
+
+   LAYER . . . . . . . . . . . . . . . . . . . . .     6
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    11
+   ACTION. . . . . . . . . . . . . . . . . . . . .APPLY HEAT
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . . 0.10412E-01
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  104.34    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . . 0.52059E-02
+
+     FORCE CONVERGENCE VALUE  =   16.80      CRITERION=  0.8401E-01
+     DISP CONVERGENCE VALUE   =  0.1363E-06  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.1363E-06
+     DISP CONVERGENCE VALUE   =  0.1363E-06  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.1363E-06
+     FORCE CONVERGENCE VALUE  =  0.4611E-06  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP    11   SUBSTEP     1  COMPLETED.    CUM ITER =     40
+ *** TIME =   104.337         TIME INC =  0.520600E-02
+
+     FORCE CONVERGENCE VALUE  =   2.346      CRITERION=  0.1173E-01
+     DISP CONVERGENCE VALUE   =  0.1817E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1817E-07
+     DISP CONVERGENCE VALUE   =  0.1817E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1817E-07
+     FORCE CONVERGENCE VALUE  =  0.5767E-07  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP    11   SUBSTEP     2  COMPLETED.    CUM ITER =     41
+ *** TIME =   104.342         TIME INC =  0.520600E-02
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    12
+   ACTION. . . . . . . . . . . . . . . . . . . . .COOL BETWEEN LAYERS
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . .  20.856    
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  125.20    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . .  10.428    
+
+     FORCE CONVERGENCE VALUE  =   18.31      CRITERION=  0.9044E-01
+     DISP CONVERGENCE VALUE   =  0.2800E-06  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.2800E-06
+     DISP CONVERGENCE VALUE   =  0.2800E-06  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.2800E-06
+     FORCE CONVERGENCE VALUE  =  0.1197      CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.3920E-08
+     DISP CONVERGENCE VALUE   =  0.3920E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.3920E-08
+     FORCE CONVERGENCE VALUE  =  0.2258E-03  CRITERION=  0.5000E-04
+    EQUIL ITER   3 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.1330E-10
+     DISP CONVERGENCE VALUE   =  0.1330E-10  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.1330E-10
+     FORCE CONVERGENCE VALUE  =  0.9673E-09  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   3
+ *** LOAD STEP    12   SUBSTEP     1  COMPLETED.    CUM ITER =     44
+ *** TIME =   114.770         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.3129E-04   CRITERION =  1.000    
+
+     FORCE CONVERGENCE VALUE  =  0.7866      CRITERION=  0.3933E-02
+     DISP CONVERGENCE VALUE   =  0.5567E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.5567E-08
+     DISP CONVERGENCE VALUE   =  0.5567E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.5567E-08
+     FORCE CONVERGENCE VALUE  =  0.3949E-02  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1307E-09
+     DISP CONVERGENCE VALUE   =  0.1307E-09  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1307E-09
+     FORCE CONVERGENCE VALUE  =  0.8950E-07  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP    12   SUBSTEP     2  COMPLETED.    CUM ITER =     46
+ *** TIME =   125.198         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.8876E-06   CRITERION =  1.000    
+
+   LAYER . . . . . . . . . . . . . . . . . . . . .     7
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    13
+   ACTION. . . . . . . . . . . . . . . . . . . . .APPLY HEAT
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . . 0.10412E-01
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  125.21    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . . 0.52059E-02
+
+     FORCE CONVERGENCE VALUE  =   9.702      CRITERION=  0.4851E-01
+     DISP CONVERGENCE VALUE   =  0.6758E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.6758E-07
+     DISP CONVERGENCE VALUE   =  0.6758E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.6758E-07
+     FORCE CONVERGENCE VALUE  =  0.2130E-06  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP    13   SUBSTEP     1  COMPLETED.    CUM ITER =     47
+ *** TIME =   125.203         TIME INC =  0.520600E-02
+
+     FORCE CONVERGENCE VALUE  =   1.147      CRITERION=  0.5735E-02
+     DISP CONVERGENCE VALUE   =  0.9710E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.9710E-08
+     DISP CONVERGENCE VALUE   =  0.9710E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.9710E-08
+     FORCE CONVERGENCE VALUE  =  0.2938E-07  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP    13   SUBSTEP     2  COMPLETED.    CUM ITER =     48
+ *** TIME =   125.208         TIME INC =  0.520600E-02
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    14
+   ACTION. . . . . . . . . . . . . . . . . . . . .COOL BETWEEN LAYERS
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . .  20.856    
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  146.06    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . .  10.428    
+
+     FORCE CONVERGENCE VALUE  =   11.71      CRITERION=  0.5793E-01
+     DISP CONVERGENCE VALUE   =  0.1390E-06  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1390E-06
+     DISP CONVERGENCE VALUE   =  0.1390E-06  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1390E-06
+     FORCE CONVERGENCE VALUE  =  0.6733E-01  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1733E-08
+     DISP CONVERGENCE VALUE   =  0.1733E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1733E-08
+     FORCE CONVERGENCE VALUE  =  0.1266E-03  CRITERION=  0.5000E-04
+    EQUIL ITER   3 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.3691E-11
+     DISP CONVERGENCE VALUE   =  0.3691E-11  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.3691E-11
+     FORCE CONVERGENCE VALUE  =  0.1763E-09  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   3
+ *** LOAD STEP    14   SUBSTEP     1  COMPLETED.    CUM ITER =     51
+ *** TIME =   135.636         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.1617E-04   CRITERION =  1.000    
+
+     FORCE CONVERGENCE VALUE  =  0.5297      CRITERION=  0.2649E-02
+     DISP CONVERGENCE VALUE   =  0.3248E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.3248E-08
+     DISP CONVERGENCE VALUE   =  0.3248E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.3248E-08
+     FORCE CONVERGENCE VALUE  =  0.2495E-02  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.6632E-10
+     DISP CONVERGENCE VALUE   =  0.6632E-10  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.6632E-10
+     FORCE CONVERGENCE VALUE  =  0.2628E-07  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP    14   SUBSTEP     2  COMPLETED.    CUM ITER =     53
+ *** TIME =   146.064         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.5597E-06   CRITERION =  1.000    
+
+   LAYER . . . . . . . . . . . . . . . . . . . . .     8
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    15
+   ACTION. . . . . . . . . . . . . . . . . . . . .APPLY HEAT
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . . 0.10412E-01
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  146.07    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . . 0.52059E-02
+
+     FORCE CONVERGENCE VALUE  =   6.362      CRITERION=  0.3181E-01
+     DISP CONVERGENCE VALUE   =  0.4146E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.4146E-07
+     DISP CONVERGENCE VALUE   =  0.4146E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.4146E-07
+     FORCE CONVERGENCE VALUE  =  0.1165E-06  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP    15   SUBSTEP     1  COMPLETED.    CUM ITER =     54
+ *** TIME =   146.069         TIME INC =  0.520600E-02
+
+     FORCE CONVERGENCE VALUE  =  0.7472      CRITERION=  0.3736E-02
+     DISP CONVERGENCE VALUE   =  0.6091E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.6091E-08
+     DISP CONVERGENCE VALUE   =  0.6091E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.6091E-08
+     FORCE CONVERGENCE VALUE  =  0.1744E-07  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP    15   SUBSTEP     2  COMPLETED.    CUM ITER =     55
+ *** TIME =   146.075         TIME INC =  0.520600E-02
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    16
+   ACTION. . . . . . . . . . . . . . . . . . . . .COOL BETWEEN LAYERS
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . .  20.856    
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  166.93    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . .  10.428    
+
+     FORCE CONVERGENCE VALUE  =   8.027      CRITERION=  0.3970E-01
+     DISP CONVERGENCE VALUE   =  0.8104E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.8104E-07
+     DISP CONVERGENCE VALUE   =  0.8104E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.8104E-07
+     FORCE CONVERGENCE VALUE  =  0.4023E-01  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.9089E-09
+     DISP CONVERGENCE VALUE   =  0.9089E-09  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.9089E-09
+     FORCE CONVERGENCE VALUE  =  0.6035E-05  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP    16   SUBSTEP     1  COMPLETED.    CUM ITER =     57
+ *** TIME =   156.503         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.9881E-05   CRITERION =  1.000    
+
+     FORCE CONVERGENCE VALUE  =  0.3849      CRITERION=  0.1924E-02
+     DISP CONVERGENCE VALUE   =  0.2141E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.2141E-08
+     DISP CONVERGENCE VALUE   =  0.2141E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.2141E-08
+     FORCE CONVERGENCE VALUE  =  0.1664E-02  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.3864E-10
+     DISP CONVERGENCE VALUE   =  0.3864E-10  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.3864E-10
+     FORCE CONVERGENCE VALUE  =  0.1035E-07  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP    16   SUBSTEP     2  COMPLETED.    CUM ITER =     59
+ *** TIME =   166.931         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.3820E-06   CRITERION =  1.000    
+
+   LAYER . . . . . . . . . . . . . . . . . . . . .     9
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    17
+   ACTION. . . . . . . . . . . . . . . . . . . . .APPLY HEAT
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . . 0.10412E-01
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  166.94    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . . 0.52059E-02
+
+     FORCE CONVERGENCE VALUE  =   4.516      CRITERION=  0.2258E-01
+     DISP CONVERGENCE VALUE   =  0.2806E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.2806E-07
+     DISP CONVERGENCE VALUE   =  0.2806E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.2806E-07
+     FORCE CONVERGENCE VALUE  =  0.7139E-07  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP    17   SUBSTEP     1  COMPLETED.    CUM ITER =     60
+ *** TIME =   166.936         TIME INC =  0.520600E-02
+
+     FORCE CONVERGENCE VALUE  =  0.5304      CRITERION=  0.2652E-02
+     DISP CONVERGENCE VALUE   =  0.4153E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.4153E-08
+     DISP CONVERGENCE VALUE   =  0.4153E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.4153E-08
+     FORCE CONVERGENCE VALUE  =  0.1116E-07  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP    17   SUBSTEP     2  COMPLETED.    CUM ITER =     61
+ *** TIME =   166.941         TIME INC =  0.520600E-02
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    18
+   ACTION. . . . . . . . . . . . . . . . . . . . .COOL BETWEEN LAYERS
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . .  20.856    
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  187.80    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . .  10.428    
+
+     FORCE CONVERGENCE VALUE  =   5.856      CRITERION=  0.2896E-01
+     DISP CONVERGENCE VALUE   =  0.5263E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.5263E-07
+     DISP CONVERGENCE VALUE   =  0.5263E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.5263E-07
+     FORCE CONVERGENCE VALUE  =  0.2498E-01  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.5181E-09
+     DISP CONVERGENCE VALUE   =  0.5181E-09  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.5181E-09
+     FORCE CONVERGENCE VALUE  =  0.3144E-04  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP    18   SUBSTEP     1  COMPLETED.    CUM ITER =     63
+ *** TIME =   177.369         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.6193E-05   CRITERION =  1.000    
+
+     FORCE CONVERGENCE VALUE  =  0.2946      CRITERION=  0.1473E-02
+     DISP CONVERGENCE VALUE   =  0.1566E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1566E-08
+     DISP CONVERGENCE VALUE   =  0.1566E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1566E-08
+     FORCE CONVERGENCE VALUE  =  0.1147E-02  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.2451E-10
+     DISP CONVERGENCE VALUE   =  0.2451E-10  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.2451E-10
+     FORCE CONVERGENCE VALUE  =  0.4488E-08  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP    18   SUBSTEP     2  COMPLETED.    CUM ITER =     65
+ *** TIME =   187.797         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.2611E-06   CRITERION =  1.000    
+
+   LAYER . . . . . . . . . . . . . . . . . . . . .    10
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    19
+   ACTION. . . . . . . . . . . . . . . . . . . . .APPLY HEAT
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . . 0.10412E-01
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  187.81    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . . 0.52059E-02
+
+     FORCE CONVERGENCE VALUE  =   3.383      CRITERION=  0.1691E-01
+     DISP CONVERGENCE VALUE   =  0.2030E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.2030E-07
+     DISP CONVERGENCE VALUE   =  0.2030E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.2030E-07
+     FORCE CONVERGENCE VALUE  =  0.4767E-07  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP    19   SUBSTEP     1  COMPLETED.    CUM ITER =     66
+ *** TIME =   187.802         TIME INC =  0.520600E-02
+
+     FORCE CONVERGENCE VALUE  =  0.3976      CRITERION=  0.1988E-02
+     DISP CONVERGENCE VALUE   =  0.3009E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.3009E-08
+     DISP CONVERGENCE VALUE   =  0.3009E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.3009E-08
+     FORCE CONVERGENCE VALUE  =  0.7589E-08  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP    19   SUBSTEP     2  COMPLETED.    CUM ITER =     67
+ *** TIME =   187.808         TIME INC =  0.520600E-02
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    20
+   ACTION. . . . . . . . . . . . . . . . . . . . .COOL BETWEEN LAYERS
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . .  20.856    
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  208.66    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . .  10.428    
+
+     FORCE CONVERGENCE VALUE  =   4.476      CRITERION=  0.2214E-01
+     DISP CONVERGENCE VALUE   =  0.3898E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.3898E-07
+     DISP CONVERGENCE VALUE   =  0.3898E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.3898E-07
+     FORCE CONVERGENCE VALUE  =  0.1600E-01  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.3121E-09
+     DISP CONVERGENCE VALUE   =  0.3121E-09  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.3121E-09
+     FORCE CONVERGENCE VALUE  =  0.1303E-04  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP    20   SUBSTEP     1  COMPLETED.    CUM ITER =     69
+ *** TIME =   198.236         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.3884E-05   CRITERION =  1.000    
+
+     FORCE CONVERGENCE VALUE  =  0.2338      CRITERION=  0.1169E-02
+     DISP CONVERGENCE VALUE   =  0.1259E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1259E-08
+     DISP CONVERGENCE VALUE   =  0.1259E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1259E-08
+     FORCE CONVERGENCE VALUE  =  0.8186E-03  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1648E-10
+     DISP CONVERGENCE VALUE   =  0.1648E-10  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1648E-10
+     FORCE CONVERGENCE VALUE  =  0.1494E-07  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP    20   SUBSTEP     2  COMPLETED.    CUM ITER =     71
+ *** TIME =   208.664         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.1846E-06   CRITERION =  1.000    
+
+   LAYER . . . . . . . . . . . . . . . . . . . . .    11
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    21
+   ACTION. . . . . . . . . . . . . . . . . . . . .APPLY HEAT
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . . 0.10412E-01
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  208.67    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . . 0.52059E-02
+
+     FORCE CONVERGENCE VALUE  =   2.635      CRITERION=  0.1318E-01
+     DISP CONVERGENCE VALUE   =  0.1542E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1542E-07
+     DISP CONVERGENCE VALUE   =  0.1542E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1542E-07
+     FORCE CONVERGENCE VALUE  =  0.3408E-07  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP    21   SUBSTEP     1  COMPLETED.    CUM ITER =     72
+ *** TIME =   208.669         TIME INC =  0.520600E-02
+
+     FORCE CONVERGENCE VALUE  =  0.3097      CRITERION=  0.1548E-02
+     DISP CONVERGENCE VALUE   =  0.2279E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.2279E-08
+     DISP CONVERGENCE VALUE   =  0.2279E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.2279E-08
+     FORCE CONVERGENCE VALUE  =  0.5442E-08  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP    21   SUBSTEP     2  COMPLETED.    CUM ITER =     73
+ *** TIME =   208.674         TIME INC =  0.520600E-02
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    22
+   ACTION. . . . . . . . . . . . . . . . . . . . .COOL BETWEEN LAYERS
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . .  20.856    
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  229.53    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . .  10.428    
+
+     FORCE CONVERGENCE VALUE  =   3.542      CRITERION=  0.1752E-01
+     DISP CONVERGENCE VALUE   =  0.3021E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.3021E-07
+     DISP CONVERGENCE VALUE   =  0.3021E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.3021E-07
+     FORCE CONVERGENCE VALUE  =  0.1050E-01  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1947E-09
+     DISP CONVERGENCE VALUE   =  0.1947E-09  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =  0.9999     SCALED MAX DOF INC =  0.1947E-09
+     FORCE CONVERGENCE VALUE  =  0.1787E-04  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP    22   SUBSTEP     1  COMPLETED.    CUM ITER =     75
+ *** TIME =   219.102         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.2557E-05   CRITERION =  1.000    
+
+     FORCE CONVERGENCE VALUE  =  0.1913      CRITERION=  0.9566E-03
+     DISP CONVERGENCE VALUE   =  0.1048E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1048E-08
+     DISP CONVERGENCE VALUE   =  0.1048E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1048E-08
+     FORCE CONVERGENCE VALUE  =  0.6044E-03  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1155E-10
+     DISP CONVERGENCE VALUE   =  0.1155E-10  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1155E-10
+     FORCE CONVERGENCE VALUE  =  0.1120E-08  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP    22   SUBSTEP     2  COMPLETED.    CUM ITER =     77
+ *** TIME =   229.530         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.1393E-06   CRITERION =  1.000    
+
+   LAYER . . . . . . . . . . . . . . . . . . . . .    12
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    23
+   ACTION. . . . . . . . . . . . . . . . . . . . .APPLY HEAT
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . . 0.10412E-01
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  229.54    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . . 0.52059E-02
+
+     FORCE CONVERGENCE VALUE  =   2.116      CRITERION=  0.1058E-01
+     DISP CONVERGENCE VALUE   =  0.1215E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1215E-07
+     DISP CONVERGENCE VALUE   =  0.1215E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1215E-07
+     FORCE CONVERGENCE VALUE  =  0.2572E-07  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP    23   SUBSTEP     1  COMPLETED.    CUM ITER =     78
+ *** TIME =   229.535         TIME INC =  0.520500E-02
+
+     FORCE CONVERGENCE VALUE  =  0.2489      CRITERION=  0.1244E-02
+     DISP CONVERGENCE VALUE   =  0.1791E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1791E-08
+     DISP CONVERGENCE VALUE   =  0.1791E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1791E-08
+     FORCE CONVERGENCE VALUE  =  0.4097E-08  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP    23   SUBSTEP     2  COMPLETED.    CUM ITER =     79
+ *** TIME =   229.541         TIME INC =  0.520500E-02
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    24
+   ACTION. . . . . . . . . . . . . . . . . . . . .COOL BETWEEN LAYERS
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . .  20.856    
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  250.40    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . .  10.428    
+
+     FORCE CONVERGENCE VALUE  =   2.879      CRITERION=  0.1424E-01
+     DISP CONVERGENCE VALUE   =  0.2423E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.2423E-07
+     DISP CONVERGENCE VALUE   =  0.2423E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.2423E-07
+     FORCE CONVERGENCE VALUE  =  0.7039E-02  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1266E-09
+     DISP CONVERGENCE VALUE   =  0.1266E-09  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1266E-09
+     FORCE CONVERGENCE VALUE  =  0.1149E-04  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP    24   SUBSTEP     1  COMPLETED.    CUM ITER =     81
+ *** TIME =   239.969         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.1769E-05   CRITERION =  1.000    
+
+     FORCE CONVERGENCE VALUE  =  0.1599      CRITERION=  0.7993E-03
+     DISP CONVERGENCE VALUE   =  0.8894E-09  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.8894E-09
+     DISP CONVERGENCE VALUE   =  0.8894E-09  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.8894E-09
+     FORCE CONVERGENCE VALUE  =  0.4497E-03  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.8292E-11
+     DISP CONVERGENCE VALUE   =  0.8292E-11  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.8292E-11
+     FORCE CONVERGENCE VALUE  =  0.6060E-09  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP    24   SUBSTEP     2  COMPLETED.    CUM ITER =     83
+ *** TIME =   250.397         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.1062E-06   CRITERION =  1.000    
+
+   LAYER . . . . . . . . . . . . . . . . . . . . .    13
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    25
+   ACTION. . . . . . . . . . . . . . . . . . . . .APPLY HEAT
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . . 0.10412E-01
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  250.41    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . . 0.52059E-02
+
+     FORCE CONVERGENCE VALUE  =   1.739      CRITERION=  0.8693E-02
+     DISP CONVERGENCE VALUE   =  0.2416E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.2416E-07
+     DISP CONVERGENCE VALUE   =  0.2416E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.2416E-07
+     FORCE CONVERGENCE VALUE  =  0.1254E-10  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP    25   SUBSTEP     1  COMPLETED.    CUM ITER =     84
+ *** TIME =   250.402         TIME INC =  0.520600E-02
+
+     FORCE CONVERGENCE VALUE  =  0.2042      CRITERION=  0.1021E-02
+     DISP CONVERGENCE VALUE   =  0.1002E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.1002E-07
+     DISP CONVERGENCE VALUE   =  0.1002E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.1002E-07
+     FORCE CONVERGENCE VALUE  =  0.1284E-10  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   1
+ *** LOAD STEP    25   SUBSTEP     2  COMPLETED.    CUM ITER =     85
+ *** TIME =   250.407         TIME INC =  0.520600E-02
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    26
+   ACTION. . . . . . . . . . . . . . . . . . . . .COOL BETWEEN LAYERS
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . .  20.856    
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  271.26    
+   TIME STEP SIZE. . . . . . . . . . . . . . . . .  10.428    
+
+   APPROXIMATE TIME TO PHYSICALLY BUILD THE PART .  389.80    
+
+     FORCE CONVERGENCE VALUE  =   2.389      CRITERION=  0.1182E-01
+     DISP CONVERGENCE VALUE   =  0.2234E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.2234E-07
+     DISP CONVERGENCE VALUE   =  0.2234E-07  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.2234E-07
+     FORCE CONVERGENCE VALUE  =  0.4766E-02  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.5306E-08
+     DISP CONVERGENCE VALUE   =  0.5305E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =  0.9999     SCALED MAX DOF INC = -0.5305E-08
+     FORCE CONVERGENCE VALUE  =  0.9070E-05  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP    26   SUBSTEP     1  COMPLETED.    CUM ITER =     87
+ *** TIME =   260.835         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.1231E-05   CRITERION =  1.000    
+
+     FORCE CONVERGENCE VALUE  =  0.1363      CRITERION=  0.6815E-03
+     DISP CONVERGENCE VALUE   =  0.6484E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.6484E-08
+     DISP CONVERGENCE VALUE   =  0.6484E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.6484E-08
+     FORCE CONVERGENCE VALUE  =  0.3453E-03  CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC= -0.5348E-08
+     DISP CONVERGENCE VALUE   =  0.5348E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC = -0.5348E-08
+     FORCE CONVERGENCE VALUE  =  0.3533E-09  CRITERION=  0.5000E-04 <<< CONVERGED
+    >>> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION   2
+ *** LOAD STEP    26   SUBSTEP     2  COMPLETED.    CUM ITER =     89
+ *** TIME =   271.263         TIME INC =   10.4280    
+ *** MAX PLASTIC STRAIN STEP = 0.8355E-07   CRITERION =  1.000    
+
+ PRINTOUT RESUMED BY /GOP
+
+ *** MAPDL - ENGINEERING ANALYSIS SYSTEM  RELEASE 2025 R1          25.1     ***
+ Ansys Mechanical Enterprise                       
+ 00000000  VERSION=WINDOWS x64   11:20:42  APR 04, 2026 CP=    190.797
+
+                                                                               
+
+
+
+                      L O A D   S T E P   O P T I O N S
+
+   MAXIMUM NUMBER OF EQUILIBRIUM ITERATIONS. . . .    15
+   STEP CHANGE BOUNDARY CONDITIONS . . . . . . . .    NO
+   LINE SEARCH . . . . . . . . . . . . . . . . . .    ON
+   TERMINATE ANALYSIS IF NOT CONVERGED . . . . . .YES (EXIT)  
+   CONVERGENCE CONTROLS. . . . . . . . . . . . . .USE DEFAULTS
+   COPY INTEGRATION POINT VALUES TO NODE . . . . .YES, FOR ELEMENTS WITH
+                                                  ACTIVE MAT. NONLINEARITIES
+   PRINT OUTPUT CONTROLS . . . . . . . . . . . . .NO PRINTOUT
+   DATABASE OUTPUT CONTROLS
+      ITEM     FREQUENCY   COMPONENT
+       ALL       NONE               
+      NSOL        ALL               
+      RSOL        ALL               
+      ETMP        ALL               
+      STRS        ALL               
+      EPEL        ALL               
+      EPPL        ALL               
+      EPTH        ALL               
+
+ MAXIMUM NUMBER OF EQUILIBRIUM ITERATIONS HAS BEEN MODIFIED              
+  TO BE, NEQIT = 25, BY SOLUTION CONTROL LOGIC.                          
+
+                        A D D I T I V E   S T E P
+
+   STEP TYPE . . . . . . . . . . . . . . . . . . .COOL DOWN
+   AMBIENT TEMPERATURE . . . . . . . . . . . . . .  22.000    
+   NUMBER OF STEPS DURING COOL DOWN. . . . . . . .AS SPECIFIED IN THE THERMAL ANALYSIS
+
+   LOAD STEP . . . . . . . . . . . . . . . . . . .    27
+   TIME SPAN OF LOAD STEP. . . . . . . . . . . . .  678.57    
+   TIME AT END OF LOAD STEP. . . . . . . . . . . .  949.83    
+   INITIAL TIME STEP SIZE. . . . . . . . . . . . .  3.2313    
+
+     FORCE CONVERGENCE VALUE  =   185.8      CRITERION=  0.9291    
+     DISP CONVERGENCE VALUE   =  0.1766E-05  CRITERION=  0.1578E-05
+    EQUIL ITER   1 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.1766E-05
+     DISP CONVERGENCE VALUE   =  0.1766E-05  CRITERION=  0.1578E-05
+     LINE SEARCH PARAMETER =   1.000     SCALED MAX DOF INC =  0.1766E-05
+     FORCE CONVERGENCE VALUE  =  0.1501      CRITERION=  0.5000E-04
+    EQUIL ITER   2 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.9393E-08
+     DISP CONVERGENCE VALUE   =  0.9385E-08  CRITERION=  0.1578E-05 <<< CONVERGED
+     LINE SEARCH PARAMETER =  0.9991     SCALED MAX DOF INC =  0.9385E-08
+     FORCE CONVERGENCE VALUE  =  0.7731E-03  CRITERION=  0.5000E-04
+    EQUIL ITER   3 COMPLETED.  NEW TRIANG MATRIX.  MAX DOF INC=  0.5500E-08

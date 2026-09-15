@@ -1,0 +1,201 @@
+/COM,ANSYS RELEASE 2025 R1           BUILD 25.1      UP20250123       11:16:18
+
+ *** WARNING ***                         CP =       2.797   TIME= 11:16:21
+ Element shape checking is currently inactive.  Issue SHPP,ON or         
+ SHPP,WARN to reactivate, if desired.                                    
+
+ *** WARNING ***                         CP =       2.797   TIME= 11:16:21
+ The preconditioned conjugate gradient solver used by (EQSLV,PCG         
+ command) only works for fully constrained models.  There are less than  
+ 3 constraints in the current model.  The solver has been reset to       
+ sparse (EQSLV,SPARSE).                                                  
+
+ *** WARNING ***                         CP =       2.859   TIME= 11:16:21
+ No constraints have been defined using the D command.                   
+
+ *** WARNING ***                         CP =       2.906   TIME= 11:16:21
+ The program chosen initial timestep/load-factor is arbitrary.  It is    
+ necessary for the user to supply a suitable initial                     
+ timestep/load-factor through the NSUB or DELTIM command for             
+ convergence and overall efficiency.                                     
+
+ *** WARNING ***                         CP =       4.500   TIME= 11:16:21
+ The input for the Z-coordinate of the top of the build plate 0 does not 
+ match the minimum Z-coordinate of 9.999992251E-05 found in build        
+ elements.  The base Z-coordinate has been changed to 9.999992251E-05.   
+
+ *** WARNING ***                         CP =       4.875   TIME= 11:16:22
+ Material property ALPX of material 1 of element 3340 is evaluated at a  
+ temperature of 120, which is below the supplied temperature range.      
+ Temperature range checking terminates.                                  
+
+ *** WARNING ***                         CP =       4.922   TIME= 11:16:22
+ Material property ALPX of material 2 of element 8191 is evaluated at a  
+ temperature of 368.150126, which is below the supplied temperature      
+ range.  Temperature range checking terminates.                          
+
+ *** WARNING ***                         CP =       4.938   TIME= 11:16:22
+ Material property ALPX of material 2 of element 8578 is evaluated at a  
+ temperature of 368.150126, which is below the supplied temperature      
+ range.  Temperature range checking terminates.                          
+
+ *** WARNING ***                         CP =       7.125   TIME= 11:16:25
+ A reference force value times the tolerance is used by the              
+ Newton-Raphson method for checking convergence.  The calculated         
+ reference FORCE CONVERGENCE VALUE = 0 is less than a threshold.  This   
+ threshold is internally calculated.  You can overwrite it by            
+ specifying MINREF on the CNVTOL command.  Check results carefully.      
+
+ *** WARNING ***                         CP =      11.953   TIME= 11:16:31
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 5291) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =      13.172   TIME= 11:16:33
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 5291) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =      15.203   TIME= 11:16:35
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 5291) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =      25.312   TIME= 11:16:48
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 5294) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =      27.875   TIME= 11:16:52
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 5294) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =      30.094   TIME= 11:16:54
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 5294) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =      31.781   TIME= 11:16:56
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 5294) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =      33.594   TIME= 11:16:59
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 5294) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =      36.281   TIME= 11:17:02
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 5294) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =      37.578   TIME= 11:17:04
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 5294) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =      95.828   TIME= 11:18:25
+ There is at least 1 small equation solver pivot term (e.g., at the UY   
+ degree of freedom of node 5279) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =      98.016   TIME= 11:18:28
+ There is at least 1 small equation solver pivot term (e.g., at the UY   
+ degree of freedom of node 5279) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =      99.703   TIME= 11:18:30
+ There is at least 1 small equation solver pivot term (e.g., at the UY   
+ degree of freedom of node 5279) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =     101.969   TIME= 11:18:33
+ There is at least 1 small equation solver pivot term (e.g., at the UY   
+ degree of freedom of node 5279) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =     103.547   TIME= 11:18:34
+ There is at least 1 small equation solver pivot term (e.g., at the UY   
+ degree of freedom of node 5279) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =     110.875   TIME= 11:18:43
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 5297) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =     112.344   TIME= 11:18:45
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 5297) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =     113.922   TIME= 11:18:47
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 5297) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =     116.094   TIME= 11:18:50
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 5297) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =     117.625   TIME= 11:18:52
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 5297) which may indicate a numerically        
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =     184.297   TIME= 11:20:26
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 13462) which may indicate a numerically       
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =     186.828   TIME= 11:20:29
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 13462) which may indicate a numerically       
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =     189.391   TIME= 11:20:33
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 13462) which may indicate a numerically       
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =     190.938   TIME= 11:20:35
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 13462) which may indicate a numerically       
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =     193.094   TIME= 11:20:38
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 13462) which may indicate a numerically       
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =     194.656   TIME= 11:20:40
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 13462) which may indicate a numerically       
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =     196.344   TIME= 11:20:42
+ No constraints have been defined using the D command.                   
+
+ *** WARNING ***                         CP =     196.344   TIME= 11:20:42
+ The preconditioned conjugate gradient solver used by (EQSLV,PCG         
+ command) only works for fully constrained models.  There are less than  
+ 3 constraints in the current model.  The solver has been reset to       
+ sparse (EQSLV,SPARSE).                                                  
+
+ *** WARNING ***                         CP =     198.219   TIME= 11:20:44
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 13462) which may indicate a numerically       
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =     199.719   TIME= 11:20:46
+ There is at least 1 small equation solver pivot term (e.g., at the UY   
+ degree of freedom of node 13462) which may indicate a numerically       
+ unstable model.  Please check your results carefully.                   
+
+ *** WARNING ***                         CP =     201.156   TIME= 11:20:48
+ There is at least 1 small equation solver pivot term (e.g., at the UX   
+ degree of freedom of node 13462) which may indicate a numerically       
+ unstable model.  Please check your results carefully.                   
