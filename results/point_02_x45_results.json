@@ -1,0 +1,14 @@
+{
+  "run_id": "point_02_x45",
+  "step_file": "C:\\Users\\018219877\\Downloads\\LBPF\\generated_steps\\point_02_x45_Rx45_Ry0_Rz0.step",
+  "rotation_degrees": {
+    "rot_x": 45.0,
+    "rot_y": 0.0,
+    "rot_z": 0.0
+  },
+  "stress_results": {
+    "min_stress": "9.1431135758951554E-10 [Pa]",
+    "average_stress": "88314215.899468809 [Pa]",
+    "max_stress": "759191991.65408623 [Pa]"
+  }
+}

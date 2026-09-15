@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.py[cod]
+
+*.log
+pymechanical_log.txt
+
+ANSYS/__pycache__/
+ANSYS/lpbfsim_Mech_Files/
+ANSYS/run_work/
+ANSYS/*.log
+ANSYS/pymechanical_log.txt
+
+.vscode/

@@ -1,0 +1,49 @@
+{
+  "project_root": "C:\\Users\\018219877\\Documents\\Codex\\2026-09-14\\https-github-com-bretthazamalum-bit-lpbf\\work\\LPBF-Project-main",
+  "solidworks_dir": "C:\\Users\\018219877\\Documents\\Codex\\2026-09-14\\https-github-com-bretthazamalum-bit-lpbf\\work\\LPBF-Project-main\\Solidworks",
+  "ansys_dir": "C:\\Users\\018219877\\Documents\\Codex\\2026-09-14\\https-github-com-bretthazamalum-bit-lpbf\\work\\LPBF-Project-main\\ANSYS",
+  "ansys_enabled": true,
+  "z_clearance_step_mm": 0.25,
+  "z_clearance_max_steps": 400,
+  "part_file": "C:\\Users\\018219877\\Documents\\Codex\\2026-09-14\\https-github-com-bretthazamalum-bit-lpbf\\work\\LPBF-Project-main\\Solidworks\\Part1.SLDPRT",
+  "step_output_dir": "C:\\Users\\018219877\\Documents\\Codex\\2026-09-14\\https-github-com-bretthazamalum-bit-lpbf\\work\\LPBF-Project-main\\generated_steps",
+  "results_dir": "C:\\Users\\018219877\\Documents\\Codex\\2026-09-14\\https-github-com-bretthazamalum-bit-lpbf\\work\\LPBF-Project-main\\results",
+  "points": [
+    {
+      "name": "point_01_baseline",
+      "rot_x": 0.0,
+      "rot_y": 0.0,
+      "rot_z": 0.0,
+      "step_file": "C:\\Users\\018219877\\Documents\\Codex\\2026-09-14\\https-github-com-bretthazamalum-bit-lpbf\\work\\LPBF-Project-main\\generated_steps\\point_01_baseline_Rx0_Ry0_Rz0.step",
+      "result_file": "C:\\Users\\018219877\\Documents\\Codex\\2026-09-14\\https-github-com-bretthazamalum-bit-lpbf\\work\\LPBF-Project-main\\results\\point_01_baseline_results.json",
+      "result_summary": null
+    },
+    {
+      "name": "point_02_x45",
+      "rot_x": 45.0,
+      "rot_y": 0.0,
+      "rot_z": 0.0,
+      "step_file": "C:\\Users\\018219877\\Documents\\Codex\\2026-09-14\\https-github-com-bretthazamalum-bit-lpbf\\work\\LPBF-Project-main\\generated_steps\\point_02_x45_Rx45_Ry0_Rz0.step",
+      "result_file": "C:\\Users\\018219877\\Documents\\Codex\\2026-09-14\\https-github-com-bretthazamalum-bit-lpbf\\work\\LPBF-Project-main\\results\\point_02_x45_results.json",
+      "result_summary": null
+    },
+    {
+      "name": "point_03_y45",
+      "rot_x": 0.0,
+      "rot_y": 45.0,
+      "rot_z": 0.0,
+      "step_file": "C:\\Users\\018219877\\Documents\\Codex\\2026-09-14\\https-github-com-bretthazamalum-bit-lpbf\\work\\LPBF-Project-main\\generated_steps\\point_03_y45_Rx0_Ry45_Rz0.step",
+      "result_file": "C:\\Users\\018219877\\Documents\\Codex\\2026-09-14\\https-github-com-bretthazamalum-bit-lpbf\\work\\LPBF-Project-main\\results\\point_03_y45_results.json",
+      "result_summary": null
+    },
+    {
+      "name": "point_04_z45",
+      "rot_x": 0.0,
+      "rot_y": 0.0,
+      "rot_z": 45.0,
+      "step_file": "C:\\Users\\018219877\\Documents\\Codex\\2026-09-14\\https-github-com-bretthazamalum-bit-lpbf\\work\\LPBF-Project-main\\generated_steps\\point_04_z45_Rx0_Ry0_Rz45.step",
+      "result_file": "C:\\Users\\018219877\\Documents\\Codex\\2026-09-14\\https-github-com-bretthazamalum-bit-lpbf\\work\\LPBF-Project-main\\results\\point_04_z45_results.json",
+      "result_summary": null
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "run_id": "point_01_baseline",
+  "step_file": "C:\\Users\\018219877\\Downloads\\LBPF\\generated_steps\\point_01_baseline_Rx0_Ry0_Rz0.step",
+  "rotation_degrees": {
+    "rot_x": 0.0,
+    "rot_y": 0.0,
+    "rot_z": 0.0
+  },
+  "stress_results": {
+    "min_stress": "8.9590517403206455E-10 [Pa]",
+    "average_stress": "88314217.144785315 [Pa]",
+    "max_stress": "759191993.69556725 [Pa]"
+  }
+}
