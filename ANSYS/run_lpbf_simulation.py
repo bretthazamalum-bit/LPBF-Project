@@ -45,9 +45,19 @@ def find_mechanical_executable() -> Path:
             )
         return executable
 
+    candidates = []
+    for environment_name, environment_value in os.environ.items():
+        if not environment_name.startswith("AWP_ROOT") or not environment_value:
+            continue
+        ansys_root = Path(environment_value).expanduser()
+        if ansys_root.name.casefold() == "ansys":
+            ansys_root = ansys_root.parent
+        candidates.append(ansys_root / "aisol" / "bin" / "winx64" / "AnsysWBU.exe")
+
     install_root = Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "ANSYS Inc"
+    candidates.extend(install_root.glob(r"v*\aisol\bin\winx64\AnsysWBU.exe"))
     candidates = sorted(
-        install_root.glob(r"v*\aisol\bin\winx64\AnsysWBU.exe"),
+        {candidate.resolve() for candidate in candidates if candidate.is_file()},
         reverse=True,
     )
     if not candidates:
@@ -245,12 +255,20 @@ except Exception as error:
 model_mesh.GenerateMesh()
 log_message("Mesh generated.")
 
-secondary_support = get_one_by_name("Generated Support 2")
-secondary_support.MultiplierEntry = AMMultiplierEntryType.All
-secondary_support.MaterialMultiplier = 0.5
+try:
+    secondary_support = get_one_by_name("Generated Support 2")
+    secondary_support.MultiplierEntry = AMMultiplierEntryType.All
+    secondary_support.MaterialMultiplier = 0.5
+    log_message("Configured Generated Support 2.")
+except Exception as error:
+    log_message("Optional Generated Support 2 not present; continuing: " + str(error))
 
-primary_support = get_one_by_name("Generated Support")
-primary_support.Delete()
+try:
+    primary_support = get_one_by_name("Generated Support")
+    primary_support.Delete()
+    log_message("Deleted Generated Support.")
+except Exception as error:
+    log_message("Optional Generated Support not present; continuing: " + str(error))
 
 part_body.Material = "Inconel 718"
 '''
@@ -269,40 +287,56 @@ for selected_analysis in mechanical_model.Analyses:
 
 RESULTS_SCRIPT = r'''
 import json
+import re
 
 
-def result_average(result_object):
+def numeric_value(value):
     try:
-        return result_object.Average
+        return float(value)
+    except Exception:
+        match = re.search(r"[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?", str(value))
+        if match:
+            return float(match.group(0))
+    return None
+
+
+def result_values(result_object):
+    try:
+        average = result_object.Average
+        numeric = numeric_value(average)
+        if numeric is not None:
+            return [numeric]
     except Exception:
         pass
 
+    candidates = []
     try:
         plot_data = result_object.PlotData
-        values = []
-
         for attribute_name in ["Values", "ResultValues", "YValues"]:
             try:
-                candidate_values = getattr(plot_data, attribute_name)
-                for value in candidate_values:
-                    values.append(float(value))
-                if values:
-                    return sum(values) / len(values)
+                candidates.append(getattr(plot_data, attribute_name))
             except Exception:
                 pass
 
         try:
-            candidate_values = plot_data["Values"]
-            for value in candidate_values:
-                values.append(float(value))
-            if values:
-                return sum(values) / len(values)
+            candidates.append(plot_data["Values"])
         except Exception:
             pass
     except Exception:
         pass
 
-    return "Average unavailable"
+    values = []
+    for candidate in candidates:
+        try:
+            for value in candidate:
+                numeric = numeric_value(value)
+                if numeric is not None:
+                    values.append(numeric)
+        except Exception:
+            numeric = numeric_value(candidate)
+            if numeric is not None:
+                values.append(numeric)
+    return values
 
 
 selected_analysis = Model.Analyses[1]
@@ -311,10 +345,22 @@ analysis_solution = selected_analysis.Solution
 equivalent_stress = analysis_solution.AddEquivalentStress()
 analysis_solution.EvaluateAllResults()
 
+maximum = str(equivalent_stress.Maximum)
+average_values = result_values(equivalent_stress)
+average = "Average unavailable"
+try:
+    average_property = equivalent_stress.Average
+    if numeric_value(average_property) is not None:
+        average = str(average_property)
+except Exception:
+    pass
+if average == "Average unavailable" and average_values:
+    average = str(sum(average_values) / len(average_values))
+
 stress_results = {
-    "max_stress": str(equivalent_stress.Maximum),
+    "max_stress": maximum,
+    "average_stress": average,
     "min_stress": str(equivalent_stress.Minimum),
-    "average_stress": str(result_average(equivalent_stress)),
 }
 
 json.dumps(stress_results)
@@ -347,6 +393,12 @@ def prepare_template_copy(run_id: str) -> Path:
 
 def execute_writable_script(mechanical_session, script: str):
     """Execute in Mechanical's full scripting context, not light/read-only mode."""
+    public_runner = getattr(mechanical_session, "run_python_script", None)
+    if callable(public_runner):
+        # Visible PyMechanical sessions expose the public remote scripting API
+        # but do not necessarily expose the embedded script_engine attribute.
+        return public_runner(script)
+
     scope_name = "lpbf-workflow"
     if not hasattr(mechanical_session, "script_engine"):
         import clr
@@ -400,6 +452,10 @@ def close_mechanical(mechanical_session) -> None:
 
 
 def parse_result(raw_result: str) -> dict:
+    if isinstance(raw_result, dict):
+        return raw_result
+    if isinstance(raw_result, bytes):
+        raw_result = raw_result.decode("utf-8", errors="replace")
     try:
         parsed = json.loads(raw_result)
         if isinstance(parsed, dict):
@@ -456,26 +512,23 @@ def main() -> int:
 
     close_open_ansys_guis()
 
-    # Launch the actual Mechanical desktop so the licensed session is visible
-    # to the user while PyMechanical drives it through gRPC.
+    # Launch the visible Mechanical desktop first, using the same direct
+    # PyMechanical GUI path as launch_mechanical_gui.py.
     mechanical_session = launch_mechanical(
         exec_file=str(MECHANICAL_EXECUTABLE),
         version=MECHANICAL_VERSION,
         batch=False,
-        read_only=False,
         cleanup_on_exit=False,
-        # Academic entitlements are mapped by Ansys Licensing to this
-        # supported Mechanical startup keyword.
-        start_license="ansys",
     )
-
-    mechanical_session.run_python_script(
-        f"ExtAPI.DataModel.Project.Open(r'{run_template}')"
-    )
-    # The visible remote Mechanical API owns the active license internally;
-    # editability is validated by the first model mutation below.
 
     try:
+        print("Mechanical GUI launched and connected; opening template...")
+        mechanical_session.run_python_script(
+            f"ExtAPI.DataModel.Project.Open(r'{run_template}')"
+        )
+        # The visible remote Mechanical API owns the active license internally;
+        # editability is validated by the first model mutation below.
+
         print("mechopen")
         print(f"run_id={args.run_id}")
         print(f"step_file={step_file}")
@@ -483,9 +536,11 @@ def main() -> int:
         print(f"rotation_degrees=({args.rot_x}, {args.rot_y}, {args.rot_z})")
 
         print("template opened in visible Mechanical GUI")
-        # Upgrade an older-version database on the disposable run copy before
-        # executing model mutations against it.
-        mechanical_session.save()
+        # Do not issue a separate Project.Save() here.  In the visible
+        # PyMechanical session that call can wait indefinitely on Mechanical's
+        # UI even though the remote scripting channel is healthy.  The
+        # mutation stages below validate writability and the run copy is
+        # disposable; save only through the stage scripts when needed.
         run_stage(mechanical_session, "deleting old geometry", DELETE_GEOMETRY_SCRIPT)
         run_stage(mechanical_session, "importing geometry", import_geometry_script(step_file))
         run_stage(mechanical_session, "meshing geometry", MESH_SCRIPT)

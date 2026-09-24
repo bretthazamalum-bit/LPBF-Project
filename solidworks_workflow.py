@@ -33,6 +33,7 @@ DEFAULT_BASE_BODY = "base"
 DEFAULT_Z_STEP_MM = 0.25
 DEFAULT_Z_MAX_STEPS = 400
 M_PER_MM = 0.001
+SOLIDWORKS_STARTUP_TIMEOUT_SECONDS = 120
 
 
 FILE_LOAD_ERROR_FLAGS = {
@@ -85,22 +86,51 @@ def make_solidworks_visible(sw):
 
 
 def get_sw():
-    try:
-        sw = win32com.client.GetActiveObject("SldWorks.Application")
-        print("Attached to existing SolidWorks instance.")
-    except Exception:
-        try:
-            sw = win32com.client.Dispatch("SldWorks.Application")
-            print("Started new SolidWorks instance.")
-        except Exception as exc:
-            raise RuntimeError(
-                "SolidWorks could not be started through automation. "
-                "Open SolidWorks normally once and clear any activation, license, "
-                "login, or first-start dialogs, then run this script again."
-            ) from exc
+    last_errors = []
 
-    make_solidworks_visible(sw)
-    return sw
+    # A COM server can take several seconds to register after SolidWorks.exe
+    # appears.  Use the standard activation path first; this is the path used
+    # by the known-working VSCode launcher.  Keep DispatchEx as a fallback.
+    launchers = (
+        ("Dispatch", win32com.client.Dispatch),
+        ("DispatchEx", win32com.client.DispatchEx),
+    )
+    launcher_index = 0
+    deadline = time.time() + SOLIDWORKS_STARTUP_TIMEOUT_SECONDS
+
+    while time.time() < deadline:
+        try:
+            sw = win32com.client.GetActiveObject("SldWorks.Application")
+            print("Attached to existing SolidWorks instance.")
+            make_solidworks_visible(sw)
+            return sw
+        except Exception as exc:
+            last_errors.append(f"attach: {exc}")
+
+        if launcher_index < len(launchers):
+            launcher_name, launcher = launchers[launcher_index]
+            launcher_index += 1
+            try:
+                sw = launcher("SldWorks.Application")
+                print(f"Started new SolidWorks instance with {launcher_name}.")
+                make_solidworks_visible(sw)
+                return sw
+            except Exception as exc:
+                last_errors.append(f"{launcher_name}: {exc}")
+
+        # Allow the interactive COM server to process startup messages before
+        # trying GetActiveObject again.
+        pythoncom.PumpWaitingMessages()
+        time.sleep(1)
+
+    recent_errors = "; ".join(last_errors[-4:])
+    raise RuntimeError(
+        "SolidWorks did not become available through COM within "
+        f"{SOLIDWORKS_STARTUP_TIMEOUT_SECONDS} seconds. "
+        "If a first-start, activation, license, login, or recovery dialog is "
+        "visible, complete it and run the workflow again. "
+        f"Recent COM errors: {recent_errors}"
+    )
 
 
 def get_active_model(sw):
@@ -217,20 +247,25 @@ def open_part(sw, part_file: Path):
     if model is not None:
         print(f"Using already-open part: {part_file}")
     else:
-        try:
-            model, errors, warnings = open_with_opendoc7(sw, part_file)
-            print("Opened part with OpenDoc7.")
-        except Exception as opendoc7_exc:
-            print(f"OpenDoc7 failed; trying OpenDoc6. Details: {opendoc7_exc!r}")
+        # OpenDoc6 is the compatibility path used by the known-working
+        # launcher.  OpenDoc7 can trigger an RPC failure on this SolidWorks
+        # installation before the document server is fully ready.
+        opendoc6_exc = None
+        for attempt in range(30):
             try:
                 model, errors, warnings = open_with_opendoc6(sw, part_file)
                 print("Opened part with OpenDoc6.")
-            except Exception as opendoc6_exc:
-                raise RuntimeError(
-                    "SolidWorks failed while opening the part. "
-                    "Try opening the part manually in SolidWorks first, then rerun. "
-                    f"OpenDoc6 details: {opendoc6_exc!r}"
-                ) from opendoc6_exc
+                break
+            except Exception as exc:
+                opendoc6_exc = exc
+                pythoncom.PumpWaitingMessages()
+                time.sleep(1)
+        else:
+            raise RuntimeError(
+                "SolidWorks failed while opening the part after 30 seconds. "
+                "Try opening the part manually in SolidWorks first, then rerun. "
+                f"OpenDoc6 details: {opendoc6_exc!r}"
+            ) from opendoc6_exc
 
     if model is None:
         raise RuntimeError(
@@ -293,18 +328,61 @@ def select_body(model, body, body_name):
         raise RuntimeError(f"Failed to select body '{body_name}'.")
 
 
+def get_body_center_of_mass(model, body, body_name):
+    """Return the selected body's center of mass in model coordinates."""
+    select_body(model, body, body_name)
+
+    property_errors = []
+    try:
+        status = VARIANT(pythoncom.VT_BYREF | pythoncom.VT_I4, 0)
+        mass_properties = model.Extension.GetMassProperties2(1, status, True)
+    except Exception as exc:
+        property_errors.append(f"GetMassProperties2: {exc}")
+        try:
+            # The body-level API is more consistently exposed by pywin32 and
+            # returns the same first three center-of-mass coordinates.
+            status = VARIANT(pythoncom.VT_BYREF | pythoncom.VT_I4, 0)
+            mass_properties = model.Extension.GetMassProperties(1, status)
+        except Exception as exc:
+            property_errors.append(f"Body.GetMassProperties: {exc}")
+            raise RuntimeError(
+                f"Could not read center of mass for body '{body_name}'. "
+                + " | ".join(property_errors)
+            ) from exc
+
+    # GetMassProperties2 returns [COM X, COM Y, COM Z, volume, ...].
+    if isinstance(mass_properties, tuple) and len(mass_properties) == 2:
+        # Some COM wrappers expose a (values, status) pair.
+        candidate = mass_properties[0]
+        if hasattr(candidate, "__len__") and len(candidate) >= 3:
+            mass_properties = candidate
+
+    if mass_properties is None or len(mass_properties) < 3:
+        raise RuntimeError(
+            f"SolidWorks returned invalid mass properties for body '{body_name}': "
+            f"{mass_properties!r}"
+        )
+
+    center = tuple(float(mass_properties[index]) for index in range(3))
+    print(
+        f"Rotation center for '{body_name}' (center of mass): "
+        f"X={center[0]:g}, Y={center[1]:g}, Z={center[2]:g} m"
+    )
+    return center
+
+
 def rotate_body(model, body_name, rot_x_deg, rot_y_deg, rot_z_deg):
     body = find_body(model, body_name)
-    select_body(model, body, body_name)
+    rotation_center = get_body_center_of_mass(model, body, body_name)
 
     feature = model.FeatureManager.InsertMoveCopyBody2(
         0.0,
         0.0,
         0.0,
         0.0,
-        0.0,
-        0.0,
-        0.0,
+        rotation_center[0],
+        rotation_center[1],
+        rotation_center[2],
         deg_to_rad(rot_x_deg),
         deg_to_rad(rot_y_deg),
         deg_to_rad(rot_z_deg),
@@ -518,10 +596,21 @@ def run_workflow(
         f"z_step={z_step_mm} mm, max_steps={z_max_steps}"
     )
 
-    sw = get_sw()
+    com_initialized = False
+    try:
+        pythoncom.CoInitialize()
+        com_initialized = True
+    except pythoncom.com_error as exc:
+        # The caller may already have initialized this thread in a different
+        # COM apartment.  In that case, continue using the existing apartment.
+        if getattr(exc, "hresult", None) != -2147417850:  # RPC_E_CHANGED_MODE
+            raise
+
+    sw = None
     model = None
 
     try:
+        sw = get_sw()
         model = open_part(sw, part_file)
         rotate_body(model, part_body, rot_x_deg, rot_y_deg, rot_z_deg)
         resolve_collision_z(
@@ -535,8 +624,10 @@ def run_workflow(
         )
         export_step(model, step_file)
     finally:
-        if model is not None and not keep_open:
+        if sw is not None and model is not None and not keep_open:
             close_solidworks(sw)
+        if com_initialized:
+            pythoncom.CoUninitialize()
 
 
 def parse_args():
