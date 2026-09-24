@@ -44,17 +44,15 @@ than an inability of the `.mechdb` file to run at all.
 
 ## Database and sidecar findings
 
-`ANSYS/lpbfsim.mechdb` is accompanied by `ANSYS/lpbfsim_Mech_Files/`, which
-contains prior solver state and results (`.rst`, `.rth`, `.out`, `.err`, `.log`,
-and related files). It also contained a top-level `.mech_lock` and solver lock
-files. The top-level `.mech_lock` was removed during local testing after all
-Ansys processes were closed. The remaining sidecar files were not removed.
+Only `ANSYS/lpbfsim.mechdb` is kept as the repository template. Solver state,
+result files, lock files, license-check copies, and PyMechanical logs are
+generated at runtime and excluded from version control. The runner creates
+disposable copies under `ANSYS/run_work/` and removes stale run sidecars before
+opening them.
 
-A disposable copy of the `.mechdb` without the original sidecar opened through
-PyMechanical and accepted `ExtAPI.DataModel.Project.Save()`. This shows that
-the database is writable in a licensed-capable session, but it does not prove
-that the original Workbench/AM license context is available to standalone
-Python.
+A disposable copy of the `.mechdb` without the original solver sidecar opened
+through PyMechanical, so the template does not require checked-in solver
+outputs to run.
 
 ## Python diagnostics
 
@@ -66,18 +64,18 @@ The following diagnostic scripts are in `ANSYS/`:
   the license preference list and enabled/disabled statuses without requesting
   a solve license.
 
-The local test runtime used Python 3.13.15. On a workstation with the local
-runtime available, examples are:
+The project uses the root `.venv` virtual environment. From the repository
+root, examples are:
 
 ```powershell
-work\python313\python.exe ANSYS\check_available_licenses.py
-work\python313\python.exe ANSYS\check_mechanical_license.py --open-template --keep-open
+.venv\Scripts\python.exe ANSYS\check_available_licenses.py
+.venv\Scripts\python.exe ANSYS\check_mechanical_license.py --open-template --keep-open
 ```
 
 For a direct test of the original template, use:
 
 ```powershell
-work\python313\python.exe ANSYS\check_mechanical_license.py --open-template --use-original --keep-open
+.venv\Scripts\python.exe ANSYS\check_mechanical_license.py --open-template --use-original --keep-open
 ```
 
 This direct mode does not save the original file.

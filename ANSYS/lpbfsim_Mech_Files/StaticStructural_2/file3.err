@@ -1,6 +1,0 @@
-/COM,ANSYS RELEASE 2025 R1           BUILD 25.1      UP20250123       11:16:18
-
- *** WARNING ***                         CP =       1.781   TIME= 11:16:22
- Material property ALPX of material 2 of element 8191 is evaluated at a  
- temperature of 368.150126, which is below the supplied temperature      
- range.  Temperature range checking terminates.                          
