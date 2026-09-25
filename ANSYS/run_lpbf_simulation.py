@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import os
 import shutil
 import subprocess
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 from ansys.mechanical.core import launch_mechanical
@@ -16,6 +18,7 @@ ANSYS_DIR = Path(__file__).resolve().parent
 DEFAULT_GEOMETRY_FILE = WORKSPACE_DIR / "Solidworks" / "Part1.step"
 TEMPLATE_FILE = ANSYS_DIR / "lpbfsim.mechdb"
 RUN_WORK_DIR = ANSYS_DIR / "run_work"
+DEFAULT_RESULTS_CSV = WORKSPACE_DIR / "results" / "orientation_results.csv"
 
 
 def close_open_ansys_guis() -> None:
@@ -277,12 +280,45 @@ SOLVE_SCRIPT = r'''
 if "mechanical_model" not in globals():
     mechanical_model = ExtAPI.DataModel.Project.Model
 
+solver_configuration = None
+try:
+    solver_configuration = ExtAPI.Application.SolveConfigurations["My Computer, Background"]
+except Exception as error:
+    ExtAPI.Log.WriteMessage("Named background solve configuration unavailable: " + str(error))
+    for candidate_configuration in ExtAPI.Application.SolveConfigurations:
+        if candidate_configuration.Default:
+            solver_configuration = candidate_configuration
+            break
+
+if solver_configuration is None:
+    raise Exception("Could not find a default Ansys solve configuration.")
+
+solver_configuration.SetAsDefault()
+solver_configuration.SolveProcessSettings.MaxNumberOfCores = 6
+ExtAPI.Log.WriteMessage(
+    "Ansys solver maximum cores set to "
+    + str(solver_configuration.SolveProcessSettings.MaxNumberOfCores)
+)
+
 temperature_load = DataModel.GetObjectsByName("Temperature")[0]
 temperature_load.Location = base_selection
 temperature_load.Magnitude = Quantity("80 [C]")
 
 for selected_analysis in mechanical_model.Analyses:
-    selected_analysis.Solve()
+    log_message(
+        "Starting analysis: index="
+        + str(list(mechanical_model.Analyses).index(selected_analysis))
+        + ", name="
+        + str(selected_analysis.Name)
+    )
+    try:
+        # The True argument makes Mechanical block until solver results are
+        # available before the result-extraction stage runs.
+        selected_analysis.Solution.Solve(True)
+    except Exception as error:
+        log_message("Synchronous solution call failed; using analysis solve: " + str(error))
+        selected_analysis.Solve()
+    log_message("Finished analysis: " + str(selected_analysis.Name))
 '''
 
 RESULTS_SCRIPT = r'''
@@ -342,6 +378,29 @@ def result_values(result_object):
 selected_analysis = Model.Analyses[1]
 analysis_solution = selected_analysis.Solution
 
+analysis_diagnostics = []
+for analysis_index, candidate_analysis in enumerate(Model.Analyses):
+    diagnostic = {
+        "index": analysis_index,
+        "name": str(candidate_analysis.Name),
+    }
+    try:
+        candidate_solution = candidate_analysis.Solution
+        diagnostic["solution_type"] = str(candidate_solution.GetType().Name)
+        try:
+            diagnostic["solution_status"] = str(candidate_solution.Status)
+        except Exception as error:
+            diagnostic["solution_status_error"] = str(error)
+        try:
+            diagnostic["solution_children"] = len(list(candidate_solution.Children))
+        except Exception as error:
+            diagnostic["solution_children_error"] = str(error)
+    except Exception as error:
+        diagnostic["solution_error"] = str(error)
+    analysis_diagnostics.append(diagnostic)
+
+ExtAPI.Log.WriteMessage("Analysis diagnostics: " + json.dumps(analysis_diagnostics))
+
 equivalent_stress = analysis_solution.AddEquivalentStress()
 analysis_solution.EvaluateAllResults()
 
@@ -361,6 +420,9 @@ stress_results = {
     "max_stress": maximum,
     "average_stress": average,
     "min_stress": str(equivalent_stress.Minimum),
+    "selected_analysis_index": 1,
+    "selected_analysis_name": str(selected_analysis.Name),
+    "analysis_diagnostics": analysis_diagnostics,
 }
 
 json.dumps(stress_results)
@@ -465,7 +527,72 @@ def parse_result(raw_result: str) -> dict:
     return {"raw_result": raw_result}
 
 
-def write_result_file(args: argparse.Namespace, stress_results: dict) -> None:
+def numeric_result(value):
+    """Convert Mechanical's formatted result strings to numeric values."""
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        import re
+
+        match = re.search(r"[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?", str(value))
+        return float(match.group(0)) if match else None
+
+
+def stress_result_status(stress_results: dict) -> tuple[str, str]:
+    average = numeric_result(stress_results.get("average_stress"))
+    maximum = numeric_result(stress_results.get("max_stress"))
+    if average is None or maximum is None:
+        return "invalid", "Stress result did not contain numeric average and maximum values."
+    if average <= 0.0 or maximum <= 0.0:
+        return "invalid", "Stress result was non-positive; excluding it from optimization."
+    return "success", ""
+
+
+def write_orientation_csv(
+    args: argparse.Namespace,
+    stress_results: dict | None,
+    *,
+    status: str,
+    error: str = "",
+    started_at: str | None = None,
+) -> None:
+    """Append one flat, optimizer-friendly record for this simulation."""
+    csv_file = Path(args.results_csv)
+    csv_file.parent.mkdir(parents=True, exist_ok=True)
+    stress_results = stress_results or {}
+    fieldnames = [
+        "run_id", "status", "rot_x_deg", "rot_y_deg", "rot_z_deg",
+        "average_stress_pa", "max_stress_pa", "min_stress_pa", "stress_units",
+        "step_file", "result_file", "started_at_utc", "completed_at_utc", "error",
+    ]
+    row = {
+        "run_id": args.run_id,
+        "status": status,
+        "rot_x_deg": args.rot_x,
+        "rot_y_deg": args.rot_y,
+        "rot_z_deg": args.rot_z,
+        "average_stress_pa": numeric_result(stress_results.get("average_stress")),
+        "max_stress_pa": numeric_result(stress_results.get("max_stress")),
+        "min_stress_pa": numeric_result(stress_results.get("min_stress")),
+        "stress_units": "Pa",
+        "step_file": str(Path(args.step_file).resolve()),
+        "result_file": str(Path(args.result_file).resolve()) if args.result_file else "",
+        "started_at_utc": started_at or "",
+        "completed_at_utc": datetime.now(timezone.utc).isoformat(),
+        "error": error,
+    }
+    file_exists = csv_file.exists() and csv_file.stat().st_size > 0
+    with csv_file.open("a", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow(row)
+    print(f"Orientation record appended: {csv_file}")
+
+
+def write_result_file(args: argparse.Namespace, stress_results: dict, *, status: str = "success", error: str = "") -> None:
     if not args.result_file:
         return
 
@@ -473,6 +600,7 @@ def write_result_file(args: argparse.Namespace, stress_results: dict) -> None:
     result_file.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "run_id": args.run_id,
+        "status": status,
         "step_file": str(Path(args.step_file).resolve()),
         "rotation_degrees": {
             "rot_x": args.rot_x,
@@ -481,6 +609,8 @@ def write_result_file(args: argparse.Namespace, stress_results: dict) -> None:
         },
         "stress_results": stress_results,
     }
+    if error:
+        payload["error"] = error
     result_file.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(f"Result file written: {result_file}")
 
@@ -494,6 +624,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rot-z", type=float, default=0.0)
     parser.add_argument("--result-file")
     parser.add_argument(
+        "--results-csv",
+        default=str(DEFAULT_RESULTS_CSV),
+        help="CSV file to which one optimizer record is appended per run.",
+    )
+    parser.add_argument(
         "--pause-before-close",
         action="store_true",
         help="Wait for Enter before closing Mechanical.",
@@ -504,6 +639,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     step_file = Path(args.step_file).resolve()
+    started_at = datetime.now(timezone.utc).isoformat()
 
     if not step_file.exists():
         raise FileNotFoundError(f"STEP file not found: {step_file}")
@@ -549,10 +685,29 @@ def main() -> int:
         raw_result = execute_writable_script(mechanical_session, RESULTS_SCRIPT)
         stress_results = parse_result(raw_result)
         print(json.dumps(stress_results, indent=2))
-        write_result_file(args, stress_results)
+        result_status, result_error = stress_result_status(stress_results)
+        write_result_file(args, stress_results, status=result_status, error=result_error)
+        write_orientation_csv(
+            args,
+            stress_results,
+            status=result_status,
+            error=result_error,
+            started_at=started_at,
+        )
 
         if args.pause_before_close:
             input("Press Enter to close Mechanical...")
+    except Exception as error:
+        error_text = f"{type(error).__name__}: {error}"
+        write_result_file(args, {}, status="failed", error=error_text)
+        write_orientation_csv(
+            args,
+            {},
+            status="failed",
+            error=error_text,
+            started_at=started_at,
+        )
+        raise
     finally:
         close_mechanical(mechanical_session)
 

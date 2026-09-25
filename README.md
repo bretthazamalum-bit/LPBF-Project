@@ -93,3 +93,62 @@ Ansys 2026 R1 was tested for backward compatibility with databases from 2025
 R1 and 2025 R2. A 2025-to-2026 migration may still affect individual objects,
 but the explicit Additive Manufacturing license error is the immediate cause
 of the read-only state observed here.
+
+### Orientation results
+
+Each Ansys run writes its detailed result to a per-orientation JSON file in
+`results/` and appends a flat record to `results/orientation_results.csv`.
+The CSV is intended for optimization loops: it includes the X/Y/Z rotation,
+numeric average, maximum, and minimum equivalent stress in Pa, run status,
+timestamps, and references to the STEP and JSON files. Failed runs are also
+recorded with `status=failed` and an error message so an optimizer can reject
+invalid orientations instead of treating them as missing data.
+
+Run the Bayesian controller with:
+
+```powershell
+python main.py --optimize --optimization-iterations 10
+```
+
+The default search range is 0–90 degrees on each axis with 15-degree
+candidate spacing. Use `--optimization-min-angle`,
+`--optimization-max-angle`, and `--optimization-grid-step` to change it.
+
+The Ansys solve stage requests a maximum of 6 solver cores for each run.
+Actual utilization can still be lower if the selected analysis or license
+does not support all requested cores.
+
+For adaptive local contour mapping around the best previous orientation, run:
+
+```powershell
+python main.py --contour-map --optimization-iterations 10
+```
+
+Contour mode starts with a 15-degree neighborhood, uses the accumulated CSV
+results to choose the next contour point, and stops after three consecutive
+successful evaluations improve the best average stress by less than 5% (after
+at least five evaluations). The search range and stopping behavior can be
+changed with `--contour-step`, `--stop-improvement`, and `--stop-patience`.
+
+The controller rejects missing or non-positive stress values as invalid. Invalid
+orientations remain recorded in the CSV but are excluded from optimization and
+are not selected again. Each JSON result also includes the selected analysis,
+solution status, and result-tree diagnostics to make failed or incomplete Ansys
+solves easier to investigate.
+
+### Validated end-to-end run
+
+The current contour workflow was validated through SolidWorks export and Ansys
+Mechanical solve. The best measured point in that run was:
+
+```text
+Orientation: X=15°, Y=15°, Z=15°
+Average equivalent stress: 78.12 MPa
+Maximum equivalent stress: 701.21 MPa
+Baseline average stress: 88.24 MPa
+Improvement: 11.5%
+```
+
+The original `ANSYS/lpbfsim.mechdb` remains a template. Every run opens a
+disposable copy under `ANSYS/run_work/`, so solver state is not saved back into
+the template.

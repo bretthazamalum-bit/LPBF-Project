@@ -18,7 +18,6 @@ from pathlib import Path
 from ansys.mechanical.core import launch_mechanical
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_TEMPLATE = Path(__file__).resolve().parent / "lpbfsim.mechdb"
 
 
@@ -32,9 +31,22 @@ def find_mechanical_executable() -> Path:
             )
         return executable
 
+    # A local installation may be on a different drive than ``ProgramFiles``.
+    # AWP_ROOT### is set by Ansys for each installed release and is the most
+    # reliable way to find the matching installation on this machine.
+    candidates = []
+    for environment_name, environment_value in os.environ.items():
+        if not environment_name.startswith("AWP_ROOT") or not environment_value:
+            continue
+        ansys_root = Path(environment_value).expanduser()
+        if ansys_root.name.casefold() == "ansys":
+            ansys_root = ansys_root.parent
+        candidates.append(ansys_root / "aisol" / "bin" / "winx64" / "AnsysWBU.exe")
+
     install_root = Path(os.environ.get("ProgramFiles", r"C:\Program Files"))
+    candidates.extend(install_root.glob(r"ANSYS Inc\v*\aisol\bin\winx64\AnsysWBU.exe"))
     candidates = sorted(
-        install_root.glob(r"ANSYS Inc\v*\aisol\bin\winx64\AnsysWBU.exe"),
+        {candidate.resolve() for candidate in candidates if candidate.is_file()},
         reverse=True,
     )
     if not candidates:
@@ -50,6 +62,18 @@ def mechanical_version(executable: Path) -> int:
         if parent.name.startswith("v") and parent.name[1:].isdigit():
             return int(parent.name[1:])
     raise ValueError(f"Could not determine Mechanical version from {executable}")
+
+
+def prepare_template(template: Path, use_original: bool) -> Path:
+    if not template.is_file():
+        raise FileNotFoundError(f"Template not found: {template}")
+
+    if use_original:
+        return template
+
+    check_copy = template.with_name(f"{template.stem}_license_check.mechdb")
+    shutil.copy2(template, check_copy)
+    return check_copy
 
 
 def run_script(session, script: str):
@@ -107,8 +131,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--keep-open",
         action="store_true",
-        help="Do not close Mechanical when the diagnostic finishes.",
+        help="Keep Mechanical open when the diagnostic finishes (default).",
     )
+    parser.add_argument(
+        "--close",
+        dest="keep_open",
+        action="store_false",
+        help="Close Mechanical automatically when the diagnostic finishes.",
+    )
+    parser.set_defaults(keep_open=True)
     return parser.parse_args()
 
 
@@ -117,18 +148,18 @@ def main() -> int:
     executable = find_mechanical_executable()
     version = mechanical_version(executable)
     template = args.template.expanduser().resolve()
+    open_path = prepare_template(template, args.use_original) if args.open_template else None
 
     print(f"Mechanical executable: {executable}")
     print(f"Mechanical version: {version}")
-    print("Launching visible Mechanical with start_license='ansys'...")
+    print("Shared Web licensing is delegated to the local Ansys Licensing Settings client.")
 
+    # Use the same direct PyMechanical GUI launch path as launch_mechanical_gui.py.
     session = launch_mechanical(
         exec_file=str(executable),
         version=version,
         batch=False,
-        read_only=False,
         cleanup_on_exit=False,
-        start_license="ansys",
     )
 
     try:
@@ -141,17 +172,11 @@ def main() -> int:
         print("License/session probe accepted by Mechanical.")
         print(f"Initial Project.IsReadOnly response: {probe_result!r}")
 
-        if args.open_template:
-            if not template.is_file():
-                raise FileNotFoundError(f"Template not found: {template}")
+        if open_path is not None:
             if args.use_original:
-                open_path = template
-                print(f"Opening original template after GUI startup: {open_path}")
+                print(f"Opening original template through Mechanical scripting: {open_path}")
             else:
-                check_copy = template.with_name(f"{template.stem}_license_check.mechdb")
-                shutil.copy2(template, check_copy)
-                open_path = check_copy
-                print(f"Opening disposable template copy after GUI startup: {open_path}")
+                print(f"Opening disposable template copy through Mechanical scripting: {open_path}")
             open_result = run_script(
                 session,
                 f"ExtAPI.DataModel.Project.Open({json.dumps(str(open_path))})",

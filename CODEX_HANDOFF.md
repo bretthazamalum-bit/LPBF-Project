@@ -13,10 +13,10 @@ This file is a handoff for the next ChatGPT/Codex instance. The remote desktop m
 
 ## Environment
 
-Python was installed as a portable copy because the normal MSI installer failed:
+The project uses this virtual environment:
 
 ```text
-work/python313/python.exe
+LPBF-Project/.venv/Scripts/python.exe
 ```
 
 Installed and verified packages:
@@ -70,7 +70,7 @@ The GUI test reached `template opened in visible Mechanical GUI`. It then stoppe
 From the repository directory:
 
 ```powershell
-$py = "..\\python313\\python.exe"
+$py = ".\\.venv\\Scripts\\python.exe"
 & $py -m py_compile main.py solidworks_workflow.py ANSYS\\run_lpbf_simulation.py
 & $py main.py
 ```

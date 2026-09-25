@@ -11,4 +11,10 @@ ANSYS/run_work/
 ANSYS/*.log
 ANSYS/pymechanical_log.txt
 
+# Generated orientation studies and solver results
+generated_steps/*.step
+results/*.json
+results/*.csv
+results/run_manifest.json
+
 .vscode/
