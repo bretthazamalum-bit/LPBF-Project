@@ -197,16 +197,33 @@ def next_contour_orientation(
     blindly scanning the global grid.
     """
     observations = load_successful_results(csv_file)
+    observed = load_attempted_orientations(csv_file)
     if not observations:
-        return Candidate(min_angle, min_angle, min_angle), {
-            "method": "contour_initial_point",
+        initial = Candidate(min_angle, min_angle, min_angle)
+        if initial not in observed:
+            return initial, {
+                "method": "contour_initial_point",
+                "observations": 0,
+            }
+        initial_candidates = [
+            candidate
+            for candidate in candidate_grid(min_angle, max_angle, contour_step)
+            if candidate not in observed
+        ]
+        if not initial_candidates:
+            return None, {
+                "method": "contour_exhausted",
+                "observations": 0,
+                "reason": "candidate_grid_exhausted",
+            }
+        return initial_candidates[0], {
+            "method": "contour_initial_grid_after_invalid_result",
             "observations": 0,
         }
     if contour_step <= 0:
         raise ValueError("contour_step must be positive")
 
     incumbent, best_value = min(observations, key=lambda item: item[1])
-    observed = load_attempted_orientations(csv_file)
     candidates = []
     for dx in (-contour_step, 0.0, contour_step):
         for dy in (-contour_step, 0.0, contour_step):

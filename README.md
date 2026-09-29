@@ -114,9 +114,16 @@ The default search range is 0–90 degrees on each axis with 15-degree
 candidate spacing. Use `--optimization-min-angle`,
 `--optimization-max-angle`, and `--optimization-grid-step` to change it.
 
-The Ansys solve stage requests a maximum of 6 solver cores for each run.
-Actual utilization can still be lower if the selected analysis or license
-does not support all requested cores.
+The Ansys solve stage uses the `My Computer` local configuration, leaves
+distributed solving disabled, and requests a maximum of 12 solver cores for
+each run. Actual utilization can still be lower if the selected analysis or
+license does not support all requested cores.
+
+Each run also creates an `LPBF Fixed Support` in the `Static Structural`
+analysis. The runner identifies the horizontal face on the global `z=0`
+plane by its centroid and face normal, prioritizing the imported build-base
+body. This support is added only to the disposable run copy; the repository
+template remains unchanged.
 
 For adaptive local contour mapping around the best previous orientation, run:
 
@@ -152,3 +159,8 @@ Improvement: 11.5%
 The original `ANSYS/lpbfsim.mechdb` remains a template. Every run opens a
 disposable copy under `ANSYS/run_work/`, so solver state is not saved back into
 the template.
+
+The fixed-support setup was verified with a baseline solve: both the transient
+thermal and static structural analyses completed with status `Done`, and the
+static structural result extraction returned nonzero average and maximum stress
+values.
