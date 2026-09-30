@@ -194,7 +194,10 @@ def next_contour_orientation(
     The contour is the 3x3x3 neighborhood around the incumbent, excluding the
     center. Expected improvement ranks the contour points using all prior CSV
     observations, so the search follows measured stress contours instead of
-    blindly scanning the global grid.
+    blindly scanning the global grid. Candidates are exploitation-first: the
+    lowest predicted average stress is selected, with expected improvement used
+    only to break ties. This keeps the measured sequence focused near the
+    incumbent while the separate best-so-far curve records actual progress.
     """
     observations = load_successful_results(csv_file)
     observed = load_attempted_orientations(csv_file)
@@ -258,11 +261,11 @@ def next_contour_orientation(
         mean, deviation = _predict(candidate, observations, length_scale)
         score = _expected_improvement(mean, deviation, best_value)
         scored.append((score, candidate, mean, deviation))
-    score, selected, predicted_mean, predicted_deviation = max(
-        scored, key=lambda item: item[0]
+    score, selected, predicted_mean, predicted_deviation = min(
+        scored, key=lambda item: (item[2], -item[0])
     )
     return selected, {
-        "method": "adaptive_contour_expected_improvement",
+        "method": "adaptive_contour_greedy_mean",
         "observations": len(observations),
         "incumbent": incumbent.__dict__,
         "best_average_stress_pa": best_value,

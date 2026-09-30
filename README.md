@@ -80,6 +80,28 @@ For a direct test of the original template, use:
 
 This direct mode does not save the original file.
 
+### Selecting the SolidWorks part
+
+When `main.py` is started without `--part-file`, it opens a file-selection
+popup for the SolidWorks `.SLDPRT` file to analyze. The selected file is passed
+through the existing workflow, while the internal SolidWorks body names remain
+`part` and `base`.
+
+After selecting the part, the program asks for separate mesh sizes for the
+part and build base. The part size controls the part/cartesian mesh, while the
+base size controls the base sizing. The values are stored in the run manifest
+and passed to every Ansys orientation solve.
+
+For scripted or batch runs, the popup can be bypassed explicitly:
+
+```powershell
+python main.py --part-file "C:\Parts\bracket.SLDPRT" `
+  --part-mesh-size-mm 0.8 --base-mesh-size-mm 1.5
+```
+
+If the mesh-size options are omitted, the program prompts for them using
+defaults of `0.1 mm` for the part and `0.5 mm` for the base.
+
 ## Recommended next step
 
 Compare the licenses shown in Ansys Licensing Settings while a Workbench LPBF
@@ -104,6 +126,11 @@ timestamps, and references to the STEP and JSON files. Failed runs are also
 recorded with `status=failed` and an error message so an optimizer can reject
 invalid orientations instead of treating them as missing data.
 
+After each completed orientation, the controller prints a progress line with
+the current iteration, average stress, and best-so-far stress. It also refreshes
+the dependency-free graph `results/stress_progress.svg`, which plots average
+stress against evaluation number and shows the best-so-far trend.
+
 Run the Bayesian controller with:
 
 ```powershell
@@ -115,7 +142,7 @@ candidate spacing. Use `--optimization-min-angle`,
 `--optimization-max-angle`, and `--optimization-grid-step` to change it.
 
 The Ansys solve stage uses the `My Computer` local configuration, leaves
-distributed solving disabled, and requests a maximum of 12 solver cores for
+distributed solving disabled, and requests a maximum of 16 solver cores for
 each run. Actual utilization can still be lower if the selected analysis or
 license does not support all requested cores.
 
@@ -131,11 +158,20 @@ For adaptive local contour mapping around the best previous orientation, run:
 python main.py --contour-map --optimization-iterations 10
 ```
 
-Contour mode starts with a 15-degree neighborhood, uses the accumulated CSV
-results to choose the next contour point, and stops after three consecutive
-successful evaluations improve the best average stress by less than 5% (after
-at least five evaluations). The search range and stopping behavior can be
-changed with `--contour-step`, `--stop-improvement`, and `--stop-patience`.
+Contour mode starts with a 15-degree neighborhood and uses the accumulated CSV
+results to choose the next contour point. If the incumbent does not improve
+for the configured patience window, the local contour spacing is halved and
+the search continues around the best orientation. It only permits convergence
+stopping after the minimum contour spacing is reached. The search range and
+stopping behavior can be changed with `--contour-step`, `--contour-min-step`,
+`--stop-improvement`, and `--stop-patience`.
+
+Contour candidate selection is exploitation-first: the candidate with the
+lowest predicted average stress is preferred, with expected improvement used
+as a tie-breaker. This keeps the search focused near the best measured
+orientation. The progress graph still shows both the measured stress values
+and the monotonic best-so-far curve; exploratory points may remain above that
+curve.
 
 The controller rejects missing or non-positive stress values as invalid. Invalid
 orientations remain recorded in the CSV but are excluded from optimization and

@@ -184,7 +184,14 @@ log_message("AM geometry scoped.")
 '''
 
 
-MESH_SCRIPT = r'''
+DEFAULT_PART_MESH_SIZE_MM = 0.1
+DEFAULT_BASE_MESH_SIZE_MM = 0.5
+
+
+def mesh_script(part_mesh_size_mm: float, base_mesh_size_mm: float) -> str:
+    part_size = f"{part_mesh_size_mm:.12g}"
+    base_size = f"{base_mesh_size_mm:.12g}"
+    return f'''
 from Ansys.Mechanical.DataModel.Enums import AMMultiplierEntryType
 
 
@@ -207,7 +214,9 @@ body_fitted_mesh = get_one_by_name("Body Fitted Cartesian")
 body_fitted_mesh.Delete()
 
 model_mesh = mechanical_model.Mesh
-model_mesh.ElementSize = Quantity("0.3 [mm]")
+part_mesh_size = Quantity("{part_size} [mm]")
+base_mesh_size = Quantity("{base_size} [mm]")
+model_mesh.ElementSize = part_mesh_size
 
 cartesian_mesh = None
 try:
@@ -232,21 +241,24 @@ except Exception as error:
     log_message("Could not assign Cartesian mesh location directly: " + str(error))
 
 try:
-    cartesian_mesh.ElementSize = Quantity("0.1 [mm]")
+    cartesian_mesh.ElementSize = part_mesh_size
 except Exception as error:
     log_message("Could not set Cartesian mesh ElementSize: " + str(error))
 
 try:
-    cartesian_mesh.XSize = Quantity("0.5 [mm]")
-    cartesian_mesh.YSize = Quantity("0.5 [mm]")
-    cartesian_mesh.ZSize = Quantity("0.5 [mm]")
+    cartesian_mesh.XSize = part_mesh_size
+    cartesian_mesh.YSize = part_mesh_size
+    cartesian_mesh.ZSize = part_mesh_size
 except Exception as error:
     log_message("Could not set Cartesian mesh XYZ sizes: " + str(error))
 
 base_mesh_sizing = model_mesh.AddSizing()
 base_mesh_sizing.Location = base_selection
-base_mesh_sizing.ElementSize = Quantity("0.5 [mm]")
+base_mesh_sizing.ElementSize = base_mesh_size
 log_message("Base sizing assigned.")
+log_message(
+    "Mesh sizes: part=" + str(part_mesh_size) + ", base=" + str(base_mesh_size)
+)
 
 try:
     base_mesh_method = model_mesh.AddAutomaticMethod()
@@ -297,7 +309,7 @@ if solver_configuration is None:
     raise Exception("Could not find a default Ansys solve configuration.")
 
 solver_configuration.SetAsDefault()
-solver_configuration.SolveProcessSettings.MaxNumberOfCores = 12
+solver_configuration.SolveProcessSettings.MaxNumberOfCores = 16
 ExtAPI.Log.WriteMessage(
     "Ansys solver configuration=My Computer; distributed=False; maximum cores="
     + str(solver_configuration.SolveProcessSettings.MaxNumberOfCores)
@@ -710,6 +722,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rot-x", type=float, default=0.0)
     parser.add_argument("--rot-y", type=float, default=0.0)
     parser.add_argument("--rot-z", type=float, default=0.0)
+    parser.add_argument(
+        "--part-mesh-size-mm",
+        type=float,
+        default=DEFAULT_PART_MESH_SIZE_MM,
+        help="Part mesh element size in millimeters.",
+    )
+    parser.add_argument(
+        "--base-mesh-size-mm",
+        type=float,
+        default=DEFAULT_BASE_MESH_SIZE_MM,
+        help="Base mesh element size in millimeters.",
+    )
     parser.add_argument("--result-file")
     parser.add_argument(
         "--results-csv",
@@ -731,6 +755,8 @@ def main() -> int:
 
     if not step_file.exists():
         raise FileNotFoundError(f"STEP file not found: {step_file}")
+    if args.part_mesh_size_mm <= 0 or args.base_mesh_size_mm <= 0:
+        raise ValueError("Mesh sizes must be greater than zero millimeters.")
 
     run_template = prepare_template_copy(args.run_id)
 
@@ -767,7 +793,11 @@ def main() -> int:
         # disposable; save only through the stage scripts when needed.
         run_stage(mechanical_session, "deleting old geometry", DELETE_GEOMETRY_SCRIPT)
         run_stage(mechanical_session, "importing geometry", import_geometry_script(step_file))
-        run_stage(mechanical_session, "meshing geometry", MESH_SCRIPT)
+        run_stage(
+            mechanical_session,
+            "meshing geometry",
+            mesh_script(args.part_mesh_size_mm, args.base_mesh_size_mm),
+        )
         run_stage(mechanical_session, "solving analyses", SOLVE_SCRIPT)
 
         raw_result = execute_writable_script(mechanical_session, RESULTS_SCRIPT)
