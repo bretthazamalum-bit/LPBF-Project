@@ -428,6 +428,15 @@ import re
 
 SCREENSHOT_FILE = __SCREENSHOT_FILE__
 
+# Camera values copied from Mechanical with "Copy View > Copy as MAPDL
+# Command".  The source commands use metres, as indicated by the exported
+# header.  Mechanical's ViewVector is normalized below because the copied
+# /VIEW vector is scaled to approximately 0.001.
+VIEW_FOCUS_M = (0.008342013301263, -0.012573704245853, 0.015762699464743)
+VIEW_VECTOR = (0.655792665976, 0.694077745751, 0.296971483657)
+VIEW_ROLL_DEGREES = -107.872213543911641
+VIEW_DISTANCE_M = 0.060587265924508
+
 
 def numeric_value(value):
     try:
@@ -478,6 +487,27 @@ def result_values(result_object):
     return values
 
 
+def apply_export_camera():
+    """Apply the camera copied from Mechanical's APDL view commands."""
+    from Ansys.ACT.Math import Vector3D
+    from Ansys.Core.Units import Quantity
+    from Ansys.Mechanical.Graphics import Point
+
+    camera = ExtAPI.Graphics.Camera
+    camera.FocalPoint = Point(list(VIEW_FOCUS_M), "m")
+    camera.ViewVector = Vector3D(*VIEW_VECTOR)
+
+    # /ANG is the roll about the view axis.  RotateView preserves the focal
+    # point and view direction while applying that roll to the screenshot.
+    camera.RotateView(VIEW_ROLL_DEGREES)
+
+    # Mechanical does not expose /DIST as a direct camera-distance property.
+    # Set the projected scene height/width from the copied distance so the
+    # exported image has stable framing at its 16:9 resolution.
+    camera.SceneHeight = Quantity(VIEW_DISTANCE_M, "m")
+    camera.SceneWidth = Quantity(VIEW_DISTANCE_M * 16.0 / 9.0, "m")
+
+
 selected_analysis = Model.Analyses[1]
 analysis_solution = selected_analysis.Solution
 
@@ -514,6 +544,7 @@ if SCREENSHOT_FILE:
         from Ansys.Mechanical.Graphics import GraphicsImageExportSettings
 
         equivalent_stress.Activate()
+        apply_export_camera()
         screenshot_settings = GraphicsImageExportSettings()
         # ANSYS requires this to be false when Width/Height are specified.
         # With True, v261 reports: "Invalid image export setting".
@@ -535,6 +566,7 @@ if SCREENSHOT_FILE:
         # fallback for Mechanical installations that reject custom settings.
         try:
             equivalent_stress.Activate()
+            apply_export_camera()
             fallback_settings = GraphicsImageExportSettings()
             ExtAPI.Graphics.ExportImage(
                 SCREENSHOT_FILE,
