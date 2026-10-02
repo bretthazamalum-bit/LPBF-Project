@@ -138,6 +138,116 @@ def candidate_grid(min_angle: float, max_angle: float, grid_step: float) -> list
     return [Candidate(x, y, z) for x in angles for y in angles for z in angles]
 
 
+# Direction-number parameters for a small, dependency-free 3-D Sobol sequence.
+_SOBOL_BITS = 32
+_SOBOL_PARAMETERS = (
+    (1, 0, (1,)),
+    (2, 1, (1, 3)),
+    (3, 1, (1, 3, 1)),
+)
+
+
+def _sobol_direction_numbers(dimension: int) -> list[int]:
+    degree, coefficient, initial = _SOBOL_PARAMETERS[dimension]
+    directions = [0] * (_SOBOL_BITS + 1)
+    for index, value in enumerate(initial, start=1):
+        directions[index] = value << (_SOBOL_BITS - index)
+    for index in range(degree + 1, _SOBOL_BITS + 1):
+        value = directions[index - degree] ^ (directions[index - degree] >> degree)
+        for bit in range(1, degree):
+            if coefficient & (1 << (degree - 1 - bit)):
+                value ^= directions[index - bit]
+        directions[index] = value
+    return directions
+
+
+_SOBOL_DIRECTIONS = tuple(
+    _sobol_direction_numbers(dimension) for dimension in range(3)
+)
+
+
+def initial_orientation_anchors(
+    min_angle: float,
+    max_angle: float,
+    symmetry_axis: str | None = None,
+) -> tuple[Candidate, ...]:
+    """Return explicit baseline and flip orientations for initial sampling."""
+    anchors = [Candidate(min_angle, min_angle, min_angle)]
+    for index, axis in enumerate(("x", "y", "z")):
+        if axis == symmetry_axis:
+            continue
+        values = [min_angle, min_angle, min_angle]
+        values[index] = max_angle
+        anchors.append(Candidate(*values))
+    return tuple(anchors)
+
+
+def _sobol_unit(index: int, dimension: int) -> float:
+    """Return one coordinate of a 3-D Sobol low-discrepancy sequence."""
+    if index < 0:
+        raise ValueError("Sobol index must be non-negative")
+    gray_code = index ^ (index >> 1)
+    value = 0
+    bit = 1
+    direction_index = 1
+    while gray_code and direction_index <= _SOBOL_BITS:
+        if gray_code & bit:
+            value ^= _SOBOL_DIRECTIONS[dimension][direction_index]
+        gray_code >>= 1
+        direction_index += 1
+    return value / float(1 << _SOBOL_BITS)
+
+
+def next_sobol_orientation(
+    csv_file: Path,
+    *,
+    sample_index: int,
+    min_angle: float = 0.0,
+    max_angle: float = 90.0,
+    axis_max_angles: tuple[float, float, float] | None = None,
+    symmetry_anchors: tuple[Candidate, ...] = (),
+) -> tuple[Candidate | None, dict]:
+    """Return the next untested orientation from a 3-D Sobol design."""
+    if sample_index < 0:
+        raise ValueError("sample_index must be non-negative")
+    if min_angle >= max_angle:
+        raise ValueError("min_angle must be less than max_angle")
+
+    observed = load_attempted_orientations(csv_file)
+    angle_maxima = axis_max_angles or (max_angle, max_angle, max_angle)
+    if len(angle_maxima) != 3 or any(value <= min_angle for value in angle_maxima):
+        raise ValueError("axis_max_angles must contain three values greater than min_angle")
+
+    if sample_index < len(symmetry_anchors):
+        anchor = symmetry_anchors[sample_index]
+        if anchor not in observed:
+            return anchor, {
+                "method": "symmetry_anchor_design",
+                "anchor_index": sample_index,
+                "design_range_degrees": [min_angle, *angle_maxima],
+            }
+
+    index = max(0, sample_index - len(symmetry_anchors))
+    for _ in range(10000):
+        candidate = Candidate(
+            round(min_angle + _sobol_unit(index, 0) * (angle_maxima[0] - min_angle), 6),
+            round(min_angle + _sobol_unit(index, 1) * (angle_maxima[1] - min_angle), 6),
+            round(min_angle + _sobol_unit(index, 2) * (angle_maxima[2] - min_angle), 6),
+        )
+        if candidate not in observed:
+            return candidate, {
+                "method": "sobol_initial_design",
+                "sobol_index": index,
+                "sample_index": sample_index,
+                "design_range_degrees": [min_angle, *angle_maxima],
+            }
+        index += 1
+    return None, {
+        "method": "sobol_exhausted",
+        "reason": "could_not_find_untested_orientation",
+    }
+
+
 def next_orientation(
     csv_file: Path,
     *,

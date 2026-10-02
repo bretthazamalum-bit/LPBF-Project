@@ -134,10 +134,10 @@ stress against evaluation number and shows the best-so-far trend.
 Run the Bayesian controller with:
 
 ```powershell
-python main.py --optimize --optimization-iterations 10
+python main.py --optimize --optimization-iterations 40
 ```
 
-The default search range is 0–90 degrees on each axis with 15-degree
+The default search range is 0–180 degrees on each axis with 15-degree
 candidate spacing. Use `--optimization-min-angle`,
 `--optimization-max-angle`, and `--optimization-grid-step` to change it.
 
@@ -152,19 +152,34 @@ plane by its centroid and face normal, prioritizing the imported build-base
 body. This support is added only to the disposable run copy; the repository
 template remains unchanged.
 
+After a successful solve, the runner also exports the selected equivalent-
+stress viewport as a 1920x1080 PNG beside the JSON result, using names such as
+`results/bo_017_equivalent_stress.png`. Screenshot export errors are recorded
+in the JSON diagnostics without invalidating an otherwise successful solve.
+
+The SolidWorks exporter rotates the part around its center of mass, then uses
+the rotated world-coordinate bounding boxes to move the part in one operation.
+The part's lowest Z point is placed at least 2.0 mm above the base's highest Z
+point, leaving a build gap for additive support generation even after an
+upside-down rotation. The minimum gap is controlled by `--support-lift-mm` when
+calling `solidworks_workflow.py`; set it to `0` to disable the extra gap.
+
 For adaptive local contour mapping around the best previous orientation, run:
 
 ```powershell
-python main.py --contour-map --optimization-iterations 10
+python main.py --contour-map --optimization-iterations 40
 ```
 
-Contour mode starts with a 15-degree neighborhood and uses the accumulated CSV
-results to choose the next contour point. If the incumbent does not improve
-for the configured patience window, the local contour spacing is halved and
-the search continues around the best orientation. It only permits convergence
-stopping after the minimum contour spacing is reached. The search range and
-stopping behavior can be changed with `--contour-step`, `--contour-min-step`,
-`--stop-improvement`, and `--stop-patience`.
+Contour mode first evaluates explicit flip anchors, then an 8-point,
+dependency-free 3-D Sobol design, and finally uses a 15-degree local contour
+search around the best initial result. If the incumbent does not improve for
+the configured patience window, the local contour spacing is halved and the
+search continues around the best orientation. Refinement stops after the
+minimum contour spacing is reached and the best average stress has improved by
+less than 5% for the patience window, or when the maximum evaluation cap is
+reached. The search range and stopping behavior can be changed with
+`--contour-step`, `--contour-min-step`, `--stop-improvement`,
+`--stop-patience`, and `--optimization-iterations`.
 
 Contour candidate selection is exploitation-first: the candidate with the
 lowest predicted average stress is preferred, with expected improvement used
@@ -172,6 +187,21 @@ as a tie-breaker. This keeps the search focused near the best measured
 orientation. The progress graph still shows both the measured stress values
 and the monotonic best-so-far curve; exploratory points may remain above that
 curve.
+
+Contour mode begins with an 8-point, dependency-free 3-D Sobol design by
+default, then switches to local contour refinement around the best Sobol
+orientation. Change the initial design size with `--sobol-initial-runs`, or
+set it to zero to start directly with contour refinement. The same user-selected
+part and base mesh sizes are used for every evaluation.
+
+Before the Sobol design, contour mode asks whether initial sampling symmetry
+should be used. Choosing cyclic symmetry asks for an axis and repeat count,
+then limits only the initial Sobol samples to one rotational sector. It also
+adds explicit baseline and flip anchors. ANSYS still runs the complete model
+for every selected orientation; symmetry is never applied inside the solver.
+Use `--symmetry-type none` to disable the prompt, or configure it from the
+command line with `--symmetry-type cyclic --symmetry-axis z
+--symmetry-repeats N`.
 
 The controller rejects missing or non-positive stress values as invalid. Invalid
 orientations remain recorded in the CSV but are excluded from optimization and

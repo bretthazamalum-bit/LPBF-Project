@@ -426,6 +426,9 @@ import json
 import re
 
 
+SCREENSHOT_FILE = __SCREENSHOT_FILE__
+
+
 def numeric_value(value):
     try:
         return float(value)
@@ -504,6 +507,57 @@ ExtAPI.Log.WriteMessage("Analysis diagnostics: " + json.dumps(analysis_diagnosti
 equivalent_stress = analysis_solution.AddEquivalentStress()
 analysis_solution.EvaluateAllResults()
 
+screenshot_error = ""
+if SCREENSHOT_FILE:
+    try:
+        from Ansys.Mechanical.DataModel.Enums import GraphicsImageExportFormat
+        from Ansys.Mechanical.Graphics import GraphicsImageExportSettings
+
+        equivalent_stress.Activate()
+        screenshot_settings = GraphicsImageExportSettings()
+        # ANSYS requires this to be false when Width/Height are specified.
+        # With True, v261 reports: "Invalid image export setting".
+        screenshot_settings.CurrentGraphicsDisplay = False
+        screenshot_settings.Width = 1920
+        screenshot_settings.Height = 1080
+        ExtAPI.Graphics.ExportImage(
+            SCREENSHOT_FILE,
+            GraphicsImageExportFormat.PNG,
+            screenshot_settings,
+        )
+        ExtAPI.Log.WriteMessage("Stress screenshot exported: " + SCREENSHOT_FILE)
+    except Exception as error:
+        screenshot_error = "Custom-resolution export failed: " + str(error)
+        ExtAPI.Log.WriteMessage(
+            "Stress screenshot export failed; continuing: " + screenshot_error
+        )
+        # The documented default-settings path is a useful compatibility
+        # fallback for Mechanical installations that reject custom settings.
+        try:
+            equivalent_stress.Activate()
+            fallback_settings = GraphicsImageExportSettings()
+            ExtAPI.Graphics.ExportImage(
+                SCREENSHOT_FILE,
+                GraphicsImageExportFormat.PNG,
+                fallback_settings,
+            )
+            screenshot_error = (
+                screenshot_error + "; default-settings fallback succeeded"
+            )
+            ExtAPI.Log.WriteMessage(
+                "Stress screenshot exported with default settings: "
+                + SCREENSHOT_FILE
+            )
+        except Exception as fallback_error:
+            screenshot_error = (
+                screenshot_error + "; default-settings fallback failed: "
+                + str(fallback_error)
+            )
+            ExtAPI.Log.WriteMessage(
+                "Stress screenshot fallback failed; continuing: "
+                + str(fallback_error)
+            )
+
 maximum = str(equivalent_stress.Maximum)
 average_values = result_values(equivalent_stress)
 average = "Average unavailable"
@@ -523,6 +577,8 @@ stress_results = {
     "selected_analysis_index": 1,
     "selected_analysis_name": str(selected_analysis.Name),
     "analysis_diagnostics": analysis_diagnostics,
+    "screenshot_file": SCREENSHOT_FILE,
+    "screenshot_error": screenshot_error,
 }
 
 json.dumps(stress_results)
@@ -736,6 +792,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--result-file")
     parser.add_argument(
+        "--screenshot-file",
+        help="PNG path for the equivalent-stress viewport image.",
+    )
+    parser.add_argument(
         "--results-csv",
         default=str(DEFAULT_RESULTS_CSV),
         help="CSV file to which one optimizer record is appended per run.",
@@ -759,6 +819,16 @@ def main() -> int:
         raise ValueError("Mesh sizes must be greater than zero millimeters.")
 
     run_template = prepare_template_copy(args.run_id)
+    screenshot_file = None
+    if args.screenshot_file:
+        screenshot_file = Path(args.screenshot_file).resolve()
+    elif args.result_file:
+        result_path = Path(args.result_file).resolve()
+        screenshot_file = result_path.with_name(
+            f"{args.run_id}_equivalent_stress.png"
+        )
+    if screenshot_file is not None:
+        screenshot_file.parent.mkdir(parents=True, exist_ok=True)
 
     close_open_ansys_guis()
 
@@ -800,7 +870,11 @@ def main() -> int:
         )
         run_stage(mechanical_session, "solving analyses", SOLVE_SCRIPT)
 
-        raw_result = execute_writable_script(mechanical_session, RESULTS_SCRIPT)
+        screenshot_literal = repr(str(screenshot_file)) if screenshot_file else "None"
+        raw_result = execute_writable_script(
+            mechanical_session,
+            RESULTS_SCRIPT.replace("__SCREENSHOT_FILE__", screenshot_literal),
+        )
         stress_results = parse_result(raw_result)
         print(json.dumps(stress_results, indent=2))
         result_status, result_error = stress_result_status(stress_results)

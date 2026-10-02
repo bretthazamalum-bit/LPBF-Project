@@ -32,6 +32,7 @@ DEFAULT_PART_BODY = "part"
 DEFAULT_BASE_BODY = "base"
 DEFAULT_Z_STEP_MM = 0.25
 DEFAULT_Z_MAX_STEPS = 400
+DEFAULT_SUPPORT_LIFT_MM = 2.0
 M_PER_MM = 0.001
 SOLIDWORKS_STARTUP_TIMEOUT_SECONDS = 120
 
@@ -551,6 +552,53 @@ def resolve_collision_z(
     )
 
 
+def ensure_support_gap(model, part_name, base_name, gap_mm):
+    """Lift the rotated part until its lowest point is gap_mm above the base."""
+    if gap_mm < 0:
+        raise ValueError("Support lift must be zero or greater.")
+
+    part_body = find_body(model, part_name)
+    base_body = find_body(model, base_name)
+    part_box = body_box(part_body)
+    base_box = body_box(base_body)
+
+    part_min_z = part_box[2]
+    base_max_z = base_box[5]
+    target_part_min_z = base_max_z + gap_mm * M_PER_MM
+    required_lift_m = max(0.0, target_part_min_z - part_min_z)
+
+    print(
+        "Post-rotation Z placement: "
+        f"part_min_z={part_min_z:g} m, base_max_z={base_max_z:g} m, "
+        f"target_part_min_z={target_part_min_z:g} m, "
+        f"required_lift={required_lift_m / M_PER_MM:g} mm"
+    )
+
+    if required_lift_m > 0.0:
+        print(
+            f"Applying LPBF support lift: moving '{part_name}' +Z by "
+            f"{required_lift_m / M_PER_MM:g} mm."
+        )
+        move_body_z(model, part_body, part_name, required_lift_m)
+    else:
+        print("Part already meets the requested LPBF support gap.")
+
+    # Re-query after the Move/Copy feature so the exported STEP is verified.
+    final_part_box = body_box(find_body(model, part_name))
+    final_min_z = final_part_box[2]
+    gap_tolerance_m = 1e-9
+    if final_min_z + gap_tolerance_m < target_part_min_z:
+        raise RuntimeError(
+            "Could not establish the requested LPBF support gap: "
+            f"final part_min_z={final_min_z:g} m, "
+            f"target={target_part_min_z:g} m."
+        )
+
+    final_gap_mm = (final_min_z - base_max_z) / M_PER_MM
+    print(f"Verified final part-to-base Z gap: {final_gap_mm:g} mm")
+    return required_lift_m
+
+
 def export_step(model, output_file: Path):
     os.makedirs(output_file.parent, exist_ok=True)
     model.ClearSelection2(True)
@@ -585,15 +633,16 @@ def run_workflow(
     z_step_mm,
     z_max_steps,
     tolerance_mm,
+    support_lift_mm,
     keep_open=False,
 ):
     print(f"Part file: {part_file}")
     print(f"STEP output: {step_file}")
     print(f"Rotation: X={rot_x_deg} deg, Y={rot_y_deg} deg, Z={rot_z_deg} deg")
     print(
-        "Collision resolver: "
+        "Bounding-box placement: "
         f"part='{part_body}', base='{base_body}', "
-        f"z_step={z_step_mm} mm, max_steps={z_max_steps}"
+        f"minimum_gap={support_lift_mm:g} mm"
     )
 
     com_initialized = False
@@ -613,15 +662,10 @@ def run_workflow(
         sw = get_sw()
         model = open_part(sw, part_file)
         rotate_body(model, part_body, rot_x_deg, rot_y_deg, rot_z_deg)
-        resolve_collision_z(
-            sw=sw,
-            model=model,
-            part_name=part_body,
-            base_name=base_body,
-            step_mm=z_step_mm,
-            max_steps=z_max_steps,
-            tolerance_mm=tolerance_mm,
-        )
+        # Use the rotated world-coordinate bounding boxes directly.  This
+        # avoids hundreds of small COM features and handles flips that place
+        # the part below the build-base plane while its CG remains fixed.
+        ensure_support_gap(model, part_body, base_body, support_lift_mm)
         export_step(model, step_file)
     finally:
         if sw is not None and model is not None and not keep_open:
@@ -633,8 +677,9 @@ def run_workflow(
 def parse_args():
     parser = argparse.ArgumentParser(
         description=(
-            "Open a SolidWorks part, rotate body 'part', lift it in Z until it "
-            "does not collide with body 'base', export STEP, and close unsaved."
+            "Open a SolidWorks part, rotate body 'part', resolve interference "
+            "against body 'base', apply an LPBF support lift, export STEP, "
+            "and close unsaved."
         )
     )
     parser.add_argument("--part-file", default=str(DEFAULT_PART_FILE))
@@ -647,6 +692,15 @@ def parse_args():
     parser.add_argument("--z-step-mm", type=float, default=DEFAULT_Z_STEP_MM)
     parser.add_argument("--z-max-steps", type=int, default=DEFAULT_Z_MAX_STEPS)
     parser.add_argument("--tolerance-mm", type=float, default=0.0)
+    parser.add_argument(
+        "--support-lift-mm",
+        type=float,
+        default=DEFAULT_SUPPORT_LIFT_MM,
+        help=(
+            "Additional +Z lift after interference is resolved, leaving space "
+            "for LPBF support generation (default: 2.0 mm)."
+        ),
+    )
     parser.add_argument(
         "--keep-open",
         action="store_true",
@@ -668,6 +722,7 @@ def main():
         z_step_mm=args.z_step_mm,
         z_max_steps=args.z_max_steps,
         tolerance_mm=args.tolerance_mm,
+        support_lift_mm=args.support_lift_mm,
         keep_open=args.keep_open,
     )
     return 0

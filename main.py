@@ -32,6 +32,7 @@ ORIENTATION_RESULTS_CSV = RESULTS_DIR / "orientation_results.csv"
 PROGRESS_GRAPH_FILE = RESULTS_DIR / "stress_progress.svg"
 Z_CLEARANCE_STEP_MM = 0.25
 Z_CLEARANCE_MAX_STEPS = 400
+LPBF_SUPPORT_LIFT_MM = 2.0
 
 ANSYS_ENABLED = True
 
@@ -285,6 +286,61 @@ def choose_mesh_sizes(
     return part_mesh_size, base_mesh_size
 
 
+def choose_sampling_symmetry() -> tuple[str, str, int]:
+    """Ask how symmetry may be used to reduce only initial sampling."""
+    try:
+        import tkinter as tk
+        from tkinter import simpledialog
+    except ImportError as error:
+        raise RuntimeError(
+            "The symmetry dialog requires tkinter. Use --symmetry-type from a command line instead."
+        ) from error
+
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)
+    try:
+        symmetry_type = simpledialog.askstring(
+            "Initial sampling symmetry",
+            "Enter symmetry type: none or cyclic",
+            initialvalue="none",
+            parent=root,
+        )
+        if symmetry_type is None:
+            raise SystemExit("Symmetry selection was cancelled; exiting without a run.")
+        symmetry_type = symmetry_type.strip().casefold()
+        if symmetry_type not in {"none", "cyclic"}:
+            raise ValueError("Symmetry type must be 'none' or 'cyclic'.")
+
+        axis = "z"
+        repeats = 1
+        if symmetry_type == "cyclic":
+            axis = simpledialog.askstring(
+                "Cyclic symmetry axis",
+                "Axis of cyclic symmetry: x, y, or z",
+                initialvalue="z",
+                parent=root,
+            )
+            if axis is None:
+                raise SystemExit("Symmetry-axis selection was cancelled; exiting without a run.")
+            axis = axis.strip().casefold()
+            if axis not in {"x", "y", "z"}:
+                raise ValueError("Cyclic symmetry axis must be x, y, or z.")
+            repeats = simpledialog.askinteger(
+                "Cyclic symmetry repeats",
+                "Number of identical repeated sectors:",
+                initialvalue=1,
+                minvalue=2,
+                parent=root,
+            )
+            if repeats is None:
+                raise SystemExit("Symmetry-repeat selection was cancelled; exiting without a run.")
+    finally:
+        root.destroy()
+
+    return symmetry_type, axis, repeats
+
+
 def run_solidworks_export(
     point: OrientationPoint,
     step_file: Path,
@@ -297,9 +353,9 @@ def run_solidworks_export(
         f"X={point.rot_x} deg, Y={point.rot_y} deg, Z={point.rot_z} deg"
     )
     print(
-        "Collision resolver passed to SolidWorks: "
-        f"part='part', base='base', z_step={Z_CLEARANCE_STEP_MM} mm, "
-        f"max_steps={Z_CLEARANCE_MAX_STEPS}"
+        "Bounding-box placement passed to SolidWorks: "
+        f"part='part', base='base', "
+        f"minimum_gap={LPBF_SUPPORT_LIFT_MM} mm"
     )
     print(f"STEP output path passed to SolidWorks exporter: {step_file}")
 
@@ -321,6 +377,8 @@ def run_solidworks_export(
             str(Z_CLEARANCE_STEP_MM),
             "--z-max-steps",
             str(Z_CLEARANCE_MAX_STEPS),
+            "--support-lift-mm",
+            str(LPBF_SUPPORT_LIFT_MM),
         ],
         PROJECT_ROOT,
         dry_run,
@@ -422,6 +480,10 @@ def write_run_manifest(
     part_mesh_size_mm: float,
     base_mesh_size_mm: float,
     dry_run: bool,
+    sobol_initial_runs: int = 0,
+    symmetry_type: str | None = None,
+    symmetry_axis: str | None = None,
+    symmetry_repeats: int = 1,
 ) -> None:
     manifest = {
         "project_root": str(PROJECT_ROOT),
@@ -430,9 +492,16 @@ def write_run_manifest(
         "ansys_enabled": ANSYS_ENABLED,
         "z_clearance_step_mm": Z_CLEARANCE_STEP_MM,
         "z_clearance_max_steps": Z_CLEARANCE_MAX_STEPS,
+        "lpbf_support_lift_mm": LPBF_SUPPORT_LIFT_MM,
         "part_file": str(part_file),
         "part_mesh_size_mm": part_mesh_size_mm,
         "base_mesh_size_mm": base_mesh_size_mm,
+        "sobol_initial_runs": sobol_initial_runs,
+        "initial_sampling_symmetry": {
+            "type": symmetry_type,
+            "axis": symmetry_axis,
+            "repeats": symmetry_repeats,
+        },
         "step_output_dir": str(STEP_OUTPUT_DIR),
         "results_dir": str(RESULTS_DIR),
         "points": [
@@ -501,10 +570,41 @@ def parse_args() -> argparse.Namespace:
         help="Use local adaptive contour mapping instead of global Bayesian search.",
     )
     parser.add_argument(
+        "--sobol-initial-runs",
+        type=int,
+        default=8,
+        help=(
+            "Number of low-discrepancy Sobol orientations before contour "
+            "refinement in contour mode (default: 8; use 0 to disable)."
+        ),
+    )
+    parser.add_argument(
+        "--symmetry-type",
+        choices=("none", "cyclic"),
+        help=(
+            "Use symmetry only to reduce initial Sobol sampling. Cyclic symmetry "
+            "also requires --symmetry-axis and --symmetry-repeats."
+        ),
+    )
+    parser.add_argument(
+        "--symmetry-axis",
+        choices=("x", "y", "z"),
+        default="z",
+        help="Axis for cyclic sampling symmetry (default: z).",
+    )
+    parser.add_argument(
+        "--symmetry-repeats",
+        type=int,
+        help="Number of identical cyclic sectors; must be at least 2.",
+    )
+    parser.add_argument(
         "--optimization-iterations",
         type=int,
-        default=10,
-        help="Number of additional Bayesian orientations to evaluate (default: 10).",
+        default=40,
+        help=(
+            "Maximum total evaluations for the flip, Sobol, and refinement "
+            "phases (default: 40)."
+        ),
     )
     parser.add_argument(
         "--optimization-min-angle",
@@ -515,8 +615,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--optimization-max-angle",
         type=float,
-        default=90.0,
-        help="Maximum angle for each rotation axis (default: 90 degrees).",
+        default=180.0,
+        help="Maximum angle for each rotation axis (default: 180 degrees).",
     )
     parser.add_argument(
         "--optimization-grid-step",
@@ -599,6 +699,22 @@ def main() -> int:
         f"part={part_mesh_size_mm} mm, base={base_mesh_size_mm} mm"
     )
 
+    symmetry_type = args.symmetry_type
+    symmetry_axis = args.symmetry_axis
+    symmetry_repeats = args.symmetry_repeats or 1
+    if args.contour_map and args.sobol_initial_runs > 0:
+        if symmetry_type is None:
+            symmetry_type, symmetry_axis, symmetry_repeats = choose_sampling_symmetry()
+        if symmetry_type == "cyclic" and symmetry_repeats < 2:
+            raise ValueError("Cyclic symmetry requires at least 2 repeats.")
+        if symmetry_type == "none":
+            symmetry_axis = "z"
+            symmetry_repeats = 1
+        print(
+            "Initial sampling symmetry: "
+            f"type={symmetry_type}, axis={symmetry_axis}, repeats={symmetry_repeats}"
+        )
+
     STEP_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -609,17 +725,60 @@ def main() -> int:
             raise ValueError("--contour-min-step must be positive")
         if args.contour_map and args.contour_min_step > args.contour_step:
             raise ValueError("--contour-min-step cannot exceed --contour-step")
+        if args.contour_map and args.sobol_initial_runs < 0:
+            raise ValueError("--sobol-initial-runs cannot be negative")
 
-        from optimize_orientation import load_successful_results, next_contour_orientation, next_orientation
+        from optimize_orientation import (
+            load_successful_results,
+            next_contour_orientation,
+            next_orientation,
+            initial_orientation_anchors,
+            next_sobol_orientation,
+        )
 
         optimization_points = []
         stalled_iterations = 0
         contour_step = args.contour_step
+        sobol_axis_max_angles = (
+            args.optimization_max_angle,
+            args.optimization_max_angle,
+            args.optimization_max_angle,
+        )
+        if symmetry_type == "cyclic":
+            cyclic_limit = min(
+                args.optimization_max_angle,
+                360.0 / symmetry_repeats,
+            )
+            axis_index = {"x": 0, "y": 1, "z": 2}[symmetry_axis]
+            sobol_axis_max_angles = tuple(
+                cyclic_limit if index == axis_index else args.optimization_max_angle
+                for index in range(3)
+            )
+        symmetry_anchors = initial_orientation_anchors(
+            args.optimization_min_angle,
+            args.optimization_max_angle,
+            symmetry_axis if symmetry_type == "cyclic" else None,
+        )
         next_run_number = next_optimizer_run_number()
+        flip_anchor_count = len(symmetry_anchors) if args.contour_map else 0
+        sobol_end_iteration = flip_anchor_count + (
+            args.sobol_initial_runs if args.contour_map else 0
+        )
         for iteration in range(1, args.optimization_iterations + 1):
             previous_observations = load_successful_results(ORIENTATION_RESULTS_CSV)
             previous_best = min((value for _, value in previous_observations), default=None)
-            if args.contour_map:
+            initial_design_phase = args.contour_map and iteration <= sobol_end_iteration
+            refinement_phase = args.contour_map and iteration > sobol_end_iteration
+            if initial_design_phase:
+                candidate, diagnostics = next_sobol_orientation(
+                    ORIENTATION_RESULTS_CSV,
+                    sample_index=iteration - 1,
+                    min_angle=args.optimization_min_angle,
+                    max_angle=args.optimization_max_angle,
+                    axis_max_angles=sobol_axis_max_angles,
+                    symmetry_anchors=symmetry_anchors,
+                )
+            elif args.contour_map:
                 candidate, diagnostics = next_contour_orientation(
                     ORIENTATION_RESULTS_CSV,
                     min_angle=args.optimization_min_angle,
@@ -644,7 +803,16 @@ def main() -> int:
                 rot_z=candidate.rot_z,
             )
             next_run_number += 1
-            print(f"\n=== Bayesian orientation {iteration}/{args.optimization_iterations} ===")
+            phase_name = (
+                "flip anchor"
+                if args.contour_map and iteration <= flip_anchor_count
+                else "Sobol"
+                if initial_design_phase
+                else "contour refinement"
+                if refinement_phase
+                else "Bayesian"
+            )
+            print(f"\n=== {phase_name} orientation {iteration}/{args.optimization_iterations} ===")
             print(json.dumps(diagnostics, indent=2))
             print(
                 "Selected orientation: "
@@ -673,6 +841,9 @@ def main() -> int:
 
             current_observations = load_successful_results(ORIENTATION_RESULTS_CSV)
             current_best = min((value for _, value in current_observations), default=None)
+            if not refinement_phase:
+                stalled_iterations = 0
+                continue
             if previous_best is not None and current_best is not None:
                 relative_improvement = (previous_best - current_best) / previous_best
                 if relative_improvement < args.stop_improvement:
@@ -684,7 +855,10 @@ def main() -> int:
                     f"below-threshold streak: {stalled_iterations}"
                 )
                 if (
-                    iteration >= args.minimum_optimization_iterations
+                    iteration >= max(
+                        args.minimum_optimization_iterations,
+                        sobol_end_iteration + 1,
+                    )
                     and stalled_iterations >= args.stop_patience
                 ):
                     if args.contour_map and contour_step > args.contour_min_step:
@@ -713,6 +887,10 @@ def main() -> int:
             part_mesh_size_mm,
             base_mesh_size_mm,
             args.dry_run,
+            args.sobol_initial_runs if args.contour_map else 0,
+            symmetry_type if args.contour_map else None,
+            symmetry_axis if args.contour_map else None,
+            symmetry_repeats if args.contour_map else 1,
         )
         return 0
 
