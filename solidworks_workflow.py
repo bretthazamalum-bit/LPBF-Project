@@ -33,6 +33,7 @@ DEFAULT_BASE_BODY = "base"
 DEFAULT_Z_STEP_MM = 0.25
 DEFAULT_Z_MAX_STEPS = 400
 DEFAULT_SUPPORT_LIFT_MM = 2.0
+DEFAULT_PLATE_MARGIN_MM = 0.0
 M_PER_MM = 0.001
 SOLIDWORKS_STARTUP_TIMEOUT_SECONDS = 120
 
@@ -478,13 +479,13 @@ def check_collision(sw, part_body, base_body, tolerance_m):
         )
 
 
-def move_body_z(model, body, body_name, step_m):
+def move_body_xyz(model, body, body_name, x_m, y_m, z_m):
     select_body(model, body, body_name)
 
     feature = model.FeatureManager.InsertMoveCopyBody2(
-        0.0,
-        0.0,
-        step_m,
+        x_m,
+        y_m,
+        z_m,
         0.0,
         0.0,
         0.0,
@@ -499,9 +500,15 @@ def move_body_z(model, body, body_name, step_m):
     model.ClearSelection2(True)
 
     if feature is None:
-        raise RuntimeError(f"Move/Copy Body Z step failed for body '{body_name}'.")
+        raise RuntimeError(
+            f"Move/Copy Body translation failed for body '{body_name}'."
+        )
 
     rebuild_model(model)
+
+
+def move_body_z(model, body, body_name, step_m):
+    move_body_xyz(model, body, body_name, 0.0, 0.0, step_m)
 
 
 def resolve_collision_z(
@@ -550,6 +557,88 @@ def resolve_collision_z(
         f"Collision remained after {max_steps} Z steps "
         f"({total_z_m / M_PER_MM:g} mm total)."
     )
+
+
+def _closest_translation(low_m, high_m):
+    """Return the smallest-magnitude translation inside an allowed interval."""
+    if low_m > high_m:
+        raise ValueError("No translation can satisfy the requested bounds.")
+    if low_m <= 0.0 <= high_m:
+        return 0.0
+    return low_m if low_m > 0.0 else high_m
+
+
+def ensure_xy_containment(model, part_name, base_name, margin_mm):
+    """Keep the rotated part's global XY bounding box over the build plate."""
+    if margin_mm < 0:
+        raise ValueError("Plate margin must be zero or greater.")
+
+    part_body = find_body(model, part_name)
+    base_body = find_body(model, base_name)
+    part_box = body_box(part_body)
+    base_box = body_box(base_body)
+    margin_m = margin_mm * M_PER_MM
+
+    part_min_x, part_min_y = part_box[0], part_box[1]
+    part_max_x, part_max_y = part_box[3], part_box[4]
+    base_min_x, base_min_y = base_box[0], base_box[1]
+    base_max_x, base_max_y = base_box[3], base_box[4]
+
+    # The translation must lie in both intervals below.  If an interval is
+    # empty, the rotated part is wider/deeper than the available plate and
+    # this orientation must be rejected rather than simulated off-plate.
+    x_low = base_min_x + margin_m - part_min_x
+    x_high = base_max_x - margin_m - part_max_x
+    y_low = base_min_y + margin_m - part_min_y
+    y_high = base_max_y - margin_m - part_max_y
+
+    if x_low > x_high or y_low > y_high:
+        raise RuntimeError(
+            "Rotated part cannot fit within the build plate XY bounds: "
+            f"part_box={part_box}, base_box={base_box}, "
+            f"margin={margin_mm:g} mm"
+        )
+
+    shift_x_m = _closest_translation(x_low, x_high)
+    shift_y_m = _closest_translation(y_low, y_high)
+    print(
+        "XY containment: "
+        f"part_box={part_box}, base_box={base_box}, "
+        f"required_shift=({shift_x_m / M_PER_MM:g}, "
+        f"{shift_y_m / M_PER_MM:g}) mm"
+    )
+
+    if shift_x_m != 0.0 or shift_y_m != 0.0:
+        move_body_xyz(
+            model,
+            find_body(model, part_name),
+            part_name,
+            shift_x_m,
+            shift_y_m,
+            0.0,
+        )
+
+    final_box = body_box(find_body(model, part_name))
+    final_min_x, final_min_y = final_box[0], final_box[1]
+    final_max_x, final_max_y = final_box[3], final_box[4]
+    tolerance_m = 1e-9
+    if (
+        final_min_x < base_min_x + margin_m - tolerance_m
+        or final_max_x > base_max_x - margin_m + tolerance_m
+        or final_min_y < base_min_y + margin_m - tolerance_m
+        or final_max_y > base_max_y - margin_m + tolerance_m
+    ):
+        raise RuntimeError(
+            "Could not place the rotated part within the build plate XY bounds: "
+            f"final_part_box={final_box}, base_box={base_box}"
+        )
+
+    print(
+        "Verified XY containment: "
+        f"part_x=({final_min_x:g}, {final_max_x:g}) m, "
+        f"part_y=({final_min_y:g}, {final_max_y:g}) m"
+    )
+    return shift_x_m, shift_y_m
 
 
 def ensure_support_gap(model, part_name, base_name, gap_mm):
@@ -634,6 +723,7 @@ def run_workflow(
     z_max_steps,
     tolerance_mm,
     support_lift_mm,
+    plate_margin_mm,
     keep_open=False,
 ):
     print(f"Part file: {part_file}")
@@ -665,6 +755,7 @@ def run_workflow(
         # Use the rotated world-coordinate bounding boxes directly.  This
         # avoids hundreds of small COM features and handles flips that place
         # the part below the build-base plane while its CG remains fixed.
+        ensure_xy_containment(model, part_body, base_body, plate_margin_mm)
         ensure_support_gap(model, part_body, base_body, support_lift_mm)
         export_step(model, step_file)
     finally:
@@ -692,6 +783,15 @@ def parse_args():
     parser.add_argument("--z-step-mm", type=float, default=DEFAULT_Z_STEP_MM)
     parser.add_argument("--z-max-steps", type=int, default=DEFAULT_Z_MAX_STEPS)
     parser.add_argument("--tolerance-mm", type=float, default=0.0)
+    parser.add_argument(
+        "--plate-margin-mm",
+        type=float,
+        default=DEFAULT_PLATE_MARGIN_MM,
+        help=(
+            "Required XY margin from the build-plate edges in millimeters "
+            "(default: 0)."
+        ),
+    )
     parser.add_argument(
         "--support-lift-mm",
         type=float,
@@ -723,6 +823,7 @@ def main():
         z_max_steps=args.z_max_steps,
         tolerance_mm=args.tolerance_mm,
         support_lift_mm=args.support_lift_mm,
+        plate_margin_mm=args.plate_margin_mm,
         keep_open=args.keep_open,
     )
     return 0

@@ -435,7 +435,6 @@ SCREENSHOT_FILE = __SCREENSHOT_FILE__
 VIEW_FOCUS_M = (0.008342013301263, -0.012573704245853, 0.015762699464743)
 VIEW_VECTOR = (0.655792665976, 0.694077745751, 0.296971483657)
 VIEW_ROLL_DEGREES = -107.872213543911641
-VIEW_DISTANCE_M = 0.060587265924508
 
 
 def numeric_value(value):
@@ -490,7 +489,6 @@ def result_values(result_object):
 def apply_export_camera():
     """Apply the camera copied from Mechanical's APDL view commands."""
     from Ansys.ACT.Math import Vector3D
-    from Ansys.Core.Units import Quantity
     from Ansys.Mechanical.Graphics import Point
 
     camera = ExtAPI.Graphics.Camera
@@ -501,11 +499,10 @@ def apply_export_camera():
     # point and view direction while applying that roll to the screenshot.
     camera.RotateView(VIEW_ROLL_DEGREES)
 
-    # Mechanical does not expose /DIST as a direct camera-distance property.
-    # Set the projected scene height/width from the copied distance so the
-    # exported image has stable framing at its 16:9 resolution.
-    camera.SceneHeight = Quantity(VIEW_DISTANCE_M, "m")
-    camera.SceneWidth = Quantity(VIEW_DISTANCE_M * 16.0 / 9.0, "m")
+    # /DIST is not the same thing as SceneHeight or SceneWidth.  Fit the
+    # complete imported model in the current view instead of using the APDL
+    # camera distance as a viewport size, which can crop the result badly.
+    camera.SetFit(None)
 
 
 selected_analysis = Model.Analyses[1]
