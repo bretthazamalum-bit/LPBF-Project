@@ -54,31 +54,37 @@ A disposable copy of the `.mechdb` without the original solver sidecar opened
 through PyMechanical, so the template does not require checked-in solver
 outputs to run.
 
-## Python diagnostics
+## ANSYS runner layout
 
-The following diagnostic scripts are in `ANSYS/`:
+The ANSYS workflow is split into three layers:
 
-- `check_mechanical_license.py` launches visible Mechanical first, probes the
-  remote session, and can open the template afterward.
-- `check_available_licenses.py` starts Mechanical in read-only mode and prints
-  the license preference list and enabled/disabled statuses without requesting
-  a solve license.
+- `ANSYS/run_lpbf_simulation.py` is the command-line entry point and phase
+  orchestrator.
+- `ANSYS/lpbf/` contains host-side session, configuration, and embedded-script
+  loading helpers.
+- `ANSYS/mechanical_scripts/` contains the scripts executed inside Mechanical:
+  geometry deletion/import, meshing, solving, and result/screenshot export.
 
-The project uses the root `.venv` virtual environment. From the repository
-root, examples are:
+The original `ANSYS/lpbfsim.mechdb` remains the template. Each run opens a
+disposable copy under `ANSYS/run_work/`; the template is not modified.
 
-```powershell
-.venv\Scripts\python.exe ANSYS\check_available_licenses.py
-.venv\Scripts\python.exe ANSYS\check_mechanical_license.py --open-template --keep-open
-```
+## SolidWorks runner layout
 
-For a direct test of the original template, use:
+`solidworks_workflow.py` is the thin command-line orchestrator. Its reusable
+SolidWorks API code is organized under `solidworks_tools/`:
 
-```powershell
-.venv\Scripts\python.exe ANSYS\check_mechanical_license.py --open-template --use-original --keep-open
-```
+- `config.py` contains defaults and SolidWorks file-load error descriptions.
+- `com_session.py` owns the single COM session and cleanup behavior.
+- `documents.py` opens and activates the selected part.
+- `bodies.py` reads bodies, center of mass, and bounding boxes.
+- `transforms.py` rotates around the part center of mass and translates bodies.
+- `placement.py` keeps rotated parts inside the plate and applies the LPBF gap.
+- `interference.py` provides exact-interference and bounding-box diagnostics.
+- `export.py` writes and verifies the STEP output.
 
-This direct mode does not save the original file.
+These are modules in one process rather than separate scripts. That keeps all
+SolidWorks COM references in the same session and preserves the template by
+closing unsaved Move/Copy Body features after each export.
 
 ### Selecting the SolidWorks part
 

@@ -1,714 +1,29 @@
-# Bundled SolidWorks workflow for one orientation.
-#
-# This replaces the old multi-process sequence:
-# openswx.py -> rotateswx.py -> resolve_collision_z.py -> swxexportstep.py
-# -> closeswx.py
-#
-# Keeping the CAD steps in one process reduces repeated COM attach/startup
-# friction and makes the variable handoff easier to inspect. The source
-# .SLDPRT is still opened fresh and closed without saving after STEP export.
+"""CLI orchestrator for one SolidWorks LPBF orientation."""
+
 from __future__ import annotations
 
 import argparse
-import math
-import os
-import sys
-import time
-from dataclasses import dataclass
 from pathlib import Path
 
-import pythoncom
-import win32com.client
-from win32com.client import VARIANT
-
-
-SCRIPT_DIR = Path(__file__).resolve().parent
-DEFAULT_PART_FILE = SCRIPT_DIR / "Part1.SLDPRT"
-
-SW_DOC_PART = 1
-SW_OPEN_SILENT = 1
-
-DEFAULT_PART_BODY = "part"
-DEFAULT_BASE_BODY = "base"
-DEFAULT_Z_STEP_MM = 0.25
-DEFAULT_Z_MAX_STEPS = 400
-DEFAULT_SUPPORT_LIFT_MM = 2.0
-DEFAULT_PLATE_MARGIN_MM = 0.0
-M_PER_MM = 0.001
-SOLIDWORKS_STARTUP_TIMEOUT_SECONDS = 120
-
-
-FILE_LOAD_ERROR_FLAGS = {
-    1: "generic file-load error",
-    2: "file not found or referenced file suppressed",
-    1024: "invalid file type",
-    8192: "future-version file: saved in a newer SolidWorks version",
-    65536: "a document with the same title is already open",
-    131072: "file is encrypted by Liquid Machines",
-    262144: "blocked because system resources are low",
-    524288: "file contains no display data",
-    1048576: "open operation was interrupted",
-    2097152: "file requires non-critical repair",
-    4194304: "file has critical data corruption",
-}
-
-
-@dataclass(frozen=True)
-class CollisionState:
-    collided: bool
-    method: str
-    detail: str
-
-
-def describe_file_load_errors(error_value):
-    descriptions = [
-        description
-        for flag, description in FILE_LOAD_ERROR_FLAGS.items()
-        if int(error_value) & flag
-    ]
-    return "; ".join(descriptions) if descriptions else "no decoded file-load errors"
-
-
-def deg_to_rad(deg):
-    return deg * math.pi / 180.0
-
-
-def make_solidworks_visible(sw):
-    # Visibility is helpful when debugging, but not required for automation.
-    # Some SolidWorks sessions reject these properties, so keep going.
-    try:
-        sw.Visible = True
-    except Exception as exc:
-        print(f"Could not set SolidWorks visibility; continuing. Details: {exc}")
-
-    try:
-        sw.FrameState = 1
-    except Exception as exc:
-        print(f"Could not set SolidWorks window state; continuing. Details: {exc}")
-
-
-def get_sw():
-    last_errors = []
-
-    # A COM server can take several seconds to register after SolidWorks.exe
-    # appears.  Use the standard activation path first; this is the path used
-    # by the known-working VSCode launcher.  Keep DispatchEx as a fallback.
-    launchers = (
-        ("Dispatch", win32com.client.Dispatch),
-        ("DispatchEx", win32com.client.DispatchEx),
-    )
-    launcher_index = 0
-    deadline = time.time() + SOLIDWORKS_STARTUP_TIMEOUT_SECONDS
-
-    while time.time() < deadline:
-        try:
-            sw = win32com.client.GetActiveObject("SldWorks.Application")
-            print("Attached to existing SolidWorks instance.")
-            make_solidworks_visible(sw)
-            return sw
-        except Exception as exc:
-            last_errors.append(f"attach: {exc}")
-
-        if launcher_index < len(launchers):
-            launcher_name, launcher = launchers[launcher_index]
-            launcher_index += 1
-            try:
-                sw = launcher("SldWorks.Application")
-                print(f"Started new SolidWorks instance with {launcher_name}.")
-                make_solidworks_visible(sw)
-                return sw
-            except Exception as exc:
-                last_errors.append(f"{launcher_name}: {exc}")
-
-        # Allow the interactive COM server to process startup messages before
-        # trying GetActiveObject again.
-        pythoncom.PumpWaitingMessages()
-        time.sleep(1)
-
-    recent_errors = "; ".join(last_errors[-4:])
-    raise RuntimeError(
-        "SolidWorks did not become available through COM within "
-        f"{SOLIDWORKS_STARTUP_TIMEOUT_SECONDS} seconds. "
-        "If a first-start, activation, license, login, or recovery dialog is "
-        "visible, complete it and run the workflow again. "
-        f"Recent COM errors: {recent_errors}"
-    )
-
-
-def get_active_model(sw):
-    model = sw.ActiveDoc
-    if model is None:
-        raise RuntimeError("No active SolidWorks document.")
-    return model
-
-
-def get_model_path(model):
-    try:
-        path = model.GetPathName()
-        return Path(path).resolve() if path else None
-    except Exception:
-        return None
-
-
-def same_path(left: Path | None, right: Path):
-    if left is None:
-        return False
-    return str(left).casefold() == str(right.resolve()).casefold()
-
-
-def get_active_matching_document(sw, part_file: Path):
-    model = sw.ActiveDoc
-    if model is None:
-        return None
-
-    active_path = get_model_path(model)
-    if same_path(active_path, part_file):
-        return model
-
-    if active_path is not None:
-        print(f"Active SolidWorks document is not the requested part: {active_path}")
-
-    return None
-
-
-def get_com_value(obj, name, default=0):
-    try:
-        return getattr(obj, name)
-    except Exception:
-        return default
-
-
-def activate_model(sw, model):
-    try:
-        title = model.GetTitle()
-    except Exception:
-        return model
-
-    try:
-        errors = VARIANT(pythoncom.VT_BYREF | pythoncom.VT_I4, 0)
-        activated = sw.ActivateDoc3(title, False, 0, errors)
-        return activated if activated is not None else model
-    except Exception:
-        return model
-
-
-def wait_for_any_active_document(sw, timeout=30):
-    start = time.time()
-
-    while time.time() - start < timeout:
-        try:
-            pythoncom.PumpWaitingMessages()
-            model = sw.ActiveDoc
-            if model is not None:
-                return model
-        except Exception:
-            pass
-
-        time.sleep(0.5)
-
-    return None
-
-
-def open_with_opendoc7(sw, part_file: Path):
-    spec = sw.GetOpenDocSpec(str(part_file))
-    spec.DocumentType = SW_DOC_PART
-    spec.Silent = True
-    spec.ReadOnly = False
-    spec.ConfigurationName = ""
-
-    model = sw.OpenDoc7(spec)
-    errors = get_com_value(spec, "Error")
-    warnings = get_com_value(spec, "Warning")
-    return model, errors, warnings
-
-
-def open_with_opendoc6(sw, part_file: Path):
-    errors = VARIANT(pythoncom.VT_BYREF | pythoncom.VT_I4, 0)
-    warnings = VARIANT(pythoncom.VT_BYREF | pythoncom.VT_I4, 0)
-
-    model = sw.OpenDoc6(
-        str(part_file),
-        SW_DOC_PART,
-        SW_OPEN_SILENT,
-        "",
-        errors,
-        warnings,
-    )
-    return model, errors.value, warnings.value
-
-
-def open_part(sw, part_file: Path):
-    if not part_file.exists():
-        raise FileNotFoundError(f"Part file not found: {part_file}")
-
-    print("SolidWorks launched.")
-    model = get_active_matching_document(sw, part_file)
-    errors = 0
-    warnings = 0
-
-    if model is not None:
-        print(f"Using already-open part: {part_file}")
-    else:
-        # OpenDoc6 is the compatibility path used by the known-working
-        # launcher.  OpenDoc7 can trigger an RPC failure on this SolidWorks
-        # installation before the document server is fully ready.
-        opendoc6_exc = None
-        for attempt in range(30):
-            try:
-                model, errors, warnings = open_with_opendoc6(sw, part_file)
-                print("Opened part with OpenDoc6.")
-                break
-            except Exception as exc:
-                opendoc6_exc = exc
-                pythoncom.PumpWaitingMessages()
-                time.sleep(1)
-        else:
-            raise RuntimeError(
-                "SolidWorks failed while opening the part after 30 seconds. "
-                "Try opening the part manually in SolidWorks first, then rerun. "
-                f"OpenDoc6 details: {opendoc6_exc!r}"
-            ) from opendoc6_exc
-
-    if model is None:
-        raise RuntimeError(
-            "Failed to open part. "
-            f"errors={errors} ({describe_file_load_errors(errors)}), "
-            f"warnings={warnings}"
-        )
-
-    model = activate_model(sw, model)
-    print(f"Opened part: {part_file}")
-    print(f"errors={errors}, warnings={warnings}")
-
-    model = wait_for_any_active_document(sw, timeout=30)
-    if model is None:
-        raise RuntimeError("No active document appeared in time.")
-
-    print("A document is active and ready.")
-    return model
-
-
-def rebuild_model(model):
-    # pywin32 can expose this COM member as either a method or a property.
-    rebuild_result = model.EditRebuild3
-    if callable(rebuild_result):
-        return rebuild_result()
-    return rebuild_result
-
-
-def get_bodies(model):
-    bodies = model.GetBodies2(0, False)
-    if not bodies:
-        raise RuntimeError("No solid bodies found.")
-    return bodies
-
-
-def find_body(model, body_name):
-    bodies = get_bodies(model)
-
-    for body in bodies:
-        try:
-            if body.Name == body_name:
-                return body
-        except Exception:
-            pass
-
-    names = []
-    for body in bodies:
-        try:
-            names.append(body.Name)
-        except Exception:
-            names.append("<unnamed>")
-
-    raise RuntimeError(f"Body '{body_name}' not found. Bodies present: {names}")
-
-
-def select_body(model, body, body_name):
-    model.ClearSelection2(True)
-    selected = body.Select(False, 1)
-    if not selected:
-        raise RuntimeError(f"Failed to select body '{body_name}'.")
-
-
-def get_body_center_of_mass(model, body, body_name):
-    """Return the selected body's center of mass in model coordinates."""
-    select_body(model, body, body_name)
-
-    property_errors = []
-    try:
-        status = VARIANT(pythoncom.VT_BYREF | pythoncom.VT_I4, 0)
-        mass_properties = model.Extension.GetMassProperties2(1, status, True)
-    except Exception as exc:
-        property_errors.append(f"GetMassProperties2: {exc}")
-        try:
-            # The body-level API is more consistently exposed by pywin32 and
-            # returns the same first three center-of-mass coordinates.
-            status = VARIANT(pythoncom.VT_BYREF | pythoncom.VT_I4, 0)
-            mass_properties = model.Extension.GetMassProperties(1, status)
-        except Exception as exc:
-            property_errors.append(f"Body.GetMassProperties: {exc}")
-            raise RuntimeError(
-                f"Could not read center of mass for body '{body_name}'. "
-                + " | ".join(property_errors)
-            ) from exc
-
-    # GetMassProperties2 returns [COM X, COM Y, COM Z, volume, ...].
-    if isinstance(mass_properties, tuple) and len(mass_properties) == 2:
-        # Some COM wrappers expose a (values, status) pair.
-        candidate = mass_properties[0]
-        if hasattr(candidate, "__len__") and len(candidate) >= 3:
-            mass_properties = candidate
-
-    if mass_properties is None or len(mass_properties) < 3:
-        raise RuntimeError(
-            f"SolidWorks returned invalid mass properties for body '{body_name}': "
-            f"{mass_properties!r}"
-        )
-
-    center = tuple(float(mass_properties[index]) for index in range(3))
-    print(
-        f"Rotation center for '{body_name}' (center of mass): "
-        f"X={center[0]:g}, Y={center[1]:g}, Z={center[2]:g} m"
-    )
-    return center
-
-
-def rotate_body(model, body_name, rot_x_deg, rot_y_deg, rot_z_deg):
-    body = find_body(model, body_name)
-    rotation_center = get_body_center_of_mass(model, body, body_name)
-
-    feature = model.FeatureManager.InsertMoveCopyBody2(
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        rotation_center[0],
-        rotation_center[1],
-        rotation_center[2],
-        deg_to_rad(rot_x_deg),
-        deg_to_rad(rot_y_deg),
-        deg_to_rad(rot_z_deg),
-        False,
-        1,
-    )
-
-    model.ClearSelection2(True)
-
-    if feature is None:
-        raise RuntimeError("InsertMoveCopyBody2 rotation failed.")
-
-    rebuild_ok = rebuild_model(model)
-    print("Move/Copy Body rotation feature created.")
-    print(f"Body: {body_name}")
-    print(f"RotX: {rot_x_deg} deg")
-    print(f"RotY: {rot_y_deg} deg")
-    print(f"RotZ: {rot_z_deg} deg")
-    print(f"Rebuild result: {rebuild_ok}")
-
-
-def body_box(body):
-    box = body.GetBodyBox()
-    if box is None or len(box) != 6:
-        raise RuntimeError(f"Could not read bounding box for body '{body.Name}'.")
-    return tuple(float(value) for value in box)
-
-
-def boxes_overlap(box_a, box_b, tolerance_m):
-    ax_min, ay_min, az_min, ax_max, ay_max, az_max = box_a
-    bx_min, by_min, bz_min, bx_max, by_max, bz_max = box_b
-
-    return (
-        ax_min < bx_max - tolerance_m
-        and ax_max > bx_min + tolerance_m
-        and ay_min < by_max - tolerance_m
-        and ay_max > by_min + tolerance_m
-        and az_min < bz_max - tolerance_m
-        and az_max > bz_min + tolerance_m
-    )
-
-
-def bbox_collision(part_body, base_body, tolerance_m):
-    # Bounding boxes are only a fallback; exact body interference is preferred.
-    part_box = body_box(part_body)
-    base_box = body_box(base_body)
-    collided = boxes_overlap(part_box, base_box, tolerance_m)
-    return CollisionState(
-        collided=collided,
-        method="bounding-box",
-        detail=f"part_box={part_box}, base_box={base_box}",
-    )
-
-
-def exact_collision(sw, part_body, base_body):
-    modeler = sw.GetModeler()
-
-    faces_1 = VARIANT(pythoncom.VT_BYREF | pythoncom.VT_VARIANT, None)
-    faces_2 = VARIANT(pythoncom.VT_BYREF | pythoncom.VT_VARIANT, None)
-    intersected_bodies = VARIANT(pythoncom.VT_BYREF | pythoncom.VT_VARIANT, None)
-
-    result = modeler.CheckInterferenceBetweenTwoBodies(
-        part_body,
-        base_body,
-        False,
-        faces_1,
-        faces_2,
-        intersected_bodies,
-    )
-
-    if isinstance(result, tuple):
-        collided = bool(result[0]) if result else False
-    else:
-        collided = bool(result)
-
-    return CollisionState(
-        collided=collided,
-        method="exact-body-interference",
-        detail=f"interference_result={result}",
-    )
-
-
-def check_collision(sw, part_body, base_body, tolerance_m):
-    try:
-        return exact_collision(sw, part_body, base_body)
-    except Exception as exc:
-        fallback = bbox_collision(part_body, base_body, tolerance_m)
-        return CollisionState(
-            collided=fallback.collided,
-            method="bounding-box fallback",
-            detail=f"exact check failed: {exc!r}; {fallback.detail}",
-        )
-
-
-def move_body_xyz(model, body, body_name, x_m, y_m, z_m):
-    select_body(model, body, body_name)
-
-    feature = model.FeatureManager.InsertMoveCopyBody2(
-        x_m,
-        y_m,
-        z_m,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        False,
-        1,
-    )
-
-    model.ClearSelection2(True)
-
-    if feature is None:
-        raise RuntimeError(
-            f"Move/Copy Body translation failed for body '{body_name}'."
-        )
-
-    rebuild_model(model)
-
-
-def move_body_z(model, body, body_name, step_m):
-    move_body_xyz(model, body, body_name, 0.0, 0.0, step_m)
-
-
-def resolve_collision_z(
-    sw,
-    model,
-    part_name,
-    base_name,
-    step_mm,
-    max_steps,
-    tolerance_mm,
-):
-    step_m = step_mm * M_PER_MM
-    tolerance_m = tolerance_mm * M_PER_MM
-    total_z_m = 0.0
-
-    if step_m <= 0:
-        raise ValueError("Z step must be greater than zero.")
-
-    for step_index in range(max_steps + 1):
-        # Re-find bodies each pass because Move/Copy Body can refresh COM refs.
-        part_body = find_body(model, part_name)
-        base_body = find_body(model, base_name)
-        state = check_collision(sw, part_body, base_body, tolerance_m)
-
-        print(
-            "Collision check "
-            f"{step_index}: collided={state.collided}, method={state.method}"
-        )
-
-        if not state.collided:
-            print(
-                "Collision resolved: "
-                f"total_z_shift_mm={total_z_m / M_PER_MM:g}, "
-                f"steps={step_index}"
-            )
-            return total_z_m
-
-        if step_index == max_steps:
-            break
-
-        print(f"Collision detected. Moving '{part_name}' +Z by {step_mm:g} mm.")
-        move_body_z(model, part_body, part_name, step_m)
-        total_z_m += step_m
-
-    raise RuntimeError(
-        f"Collision remained after {max_steps} Z steps "
-        f"({total_z_m / M_PER_MM:g} mm total)."
-    )
-
-
-def _closest_translation(low_m, high_m):
-    """Return the smallest-magnitude translation inside an allowed interval."""
-    if low_m > high_m:
-        raise ValueError("No translation can satisfy the requested bounds.")
-    if low_m <= 0.0 <= high_m:
-        return 0.0
-    return low_m if low_m > 0.0 else high_m
-
-
-def ensure_xy_containment(model, part_name, base_name, margin_mm):
-    """Keep the rotated part's global XY bounding box over the build plate."""
-    if margin_mm < 0:
-        raise ValueError("Plate margin must be zero or greater.")
-
-    part_body = find_body(model, part_name)
-    base_body = find_body(model, base_name)
-    part_box = body_box(part_body)
-    base_box = body_box(base_body)
-    margin_m = margin_mm * M_PER_MM
-
-    part_min_x, part_min_y = part_box[0], part_box[1]
-    part_max_x, part_max_y = part_box[3], part_box[4]
-    base_min_x, base_min_y = base_box[0], base_box[1]
-    base_max_x, base_max_y = base_box[3], base_box[4]
-
-    # The translation must lie in both intervals below.  If an interval is
-    # empty, the rotated part is wider/deeper than the available plate and
-    # this orientation must be rejected rather than simulated off-plate.
-    x_low = base_min_x + margin_m - part_min_x
-    x_high = base_max_x - margin_m - part_max_x
-    y_low = base_min_y + margin_m - part_min_y
-    y_high = base_max_y - margin_m - part_max_y
-
-    if x_low > x_high or y_low > y_high:
-        raise RuntimeError(
-            "Rotated part cannot fit within the build plate XY bounds: "
-            f"part_box={part_box}, base_box={base_box}, "
-            f"margin={margin_mm:g} mm"
-        )
-
-    shift_x_m = _closest_translation(x_low, x_high)
-    shift_y_m = _closest_translation(y_low, y_high)
-    print(
-        "XY containment: "
-        f"part_box={part_box}, base_box={base_box}, "
-        f"required_shift=({shift_x_m / M_PER_MM:g}, "
-        f"{shift_y_m / M_PER_MM:g}) mm"
-    )
-
-    if shift_x_m != 0.0 or shift_y_m != 0.0:
-        move_body_xyz(
-            model,
-            find_body(model, part_name),
-            part_name,
-            shift_x_m,
-            shift_y_m,
-            0.0,
-        )
-
-    final_box = body_box(find_body(model, part_name))
-    final_min_x, final_min_y = final_box[0], final_box[1]
-    final_max_x, final_max_y = final_box[3], final_box[4]
-    tolerance_m = 1e-9
-    if (
-        final_min_x < base_min_x + margin_m - tolerance_m
-        or final_max_x > base_max_x - margin_m + tolerance_m
-        or final_min_y < base_min_y + margin_m - tolerance_m
-        or final_max_y > base_max_y - margin_m + tolerance_m
-    ):
-        raise RuntimeError(
-            "Could not place the rotated part within the build plate XY bounds: "
-            f"final_part_box={final_box}, base_box={base_box}"
-        )
-
-    print(
-        "Verified XY containment: "
-        f"part_x=({final_min_x:g}, {final_max_x:g}) m, "
-        f"part_y=({final_min_y:g}, {final_max_y:g}) m"
-    )
-    return shift_x_m, shift_y_m
-
-
-def ensure_support_gap(model, part_name, base_name, gap_mm):
-    """Lift the rotated part until its lowest point is gap_mm above the base."""
-    if gap_mm < 0:
-        raise ValueError("Support lift must be zero or greater.")
-
-    part_body = find_body(model, part_name)
-    base_body = find_body(model, base_name)
-    part_box = body_box(part_body)
-    base_box = body_box(base_body)
-
-    part_min_z = part_box[2]
-    base_max_z = base_box[5]
-    target_part_min_z = base_max_z + gap_mm * M_PER_MM
-    required_lift_m = max(0.0, target_part_min_z - part_min_z)
-
-    print(
-        "Post-rotation Z placement: "
-        f"part_min_z={part_min_z:g} m, base_max_z={base_max_z:g} m, "
-        f"target_part_min_z={target_part_min_z:g} m, "
-        f"required_lift={required_lift_m / M_PER_MM:g} mm"
-    )
-
-    if required_lift_m > 0.0:
-        print(
-            f"Applying LPBF support lift: moving '{part_name}' +Z by "
-            f"{required_lift_m / M_PER_MM:g} mm."
-        )
-        move_body_z(model, part_body, part_name, required_lift_m)
-    else:
-        print("Part already meets the requested LPBF support gap.")
-
-    # Re-query after the Move/Copy feature so the exported STEP is verified.
-    final_part_box = body_box(find_body(model, part_name))
-    final_min_z = final_part_box[2]
-    gap_tolerance_m = 1e-9
-    if final_min_z + gap_tolerance_m < target_part_min_z:
-        raise RuntimeError(
-            "Could not establish the requested LPBF support gap: "
-            f"final part_min_z={final_min_z:g} m, "
-            f"target={target_part_min_z:g} m."
-        )
-
-    final_gap_mm = (final_min_z - base_max_z) / M_PER_MM
-    print(f"Verified final part-to-base Z gap: {final_gap_mm:g} mm")
-    return required_lift_m
-
-
-def export_step(model, output_file: Path):
-    os.makedirs(output_file.parent, exist_ok=True)
-    model.ClearSelection2(True)
-
-    save_status = model.SaveAs3(str(output_file), 0, 0)
-
-    if not output_file.exists():
-        raise RuntimeError(
-            f"STEP export did not create the expected file: {output_file}. "
-            f"SaveAs3 status: {save_status}"
-        )
-
-    print(f"Exported to: {output_file}")
-    print(f"SaveAs3 status: {save_status}")
-
-
-def close_solidworks(sw):
-    # Discard unsaved rotation/Z-clearance features so Part1.SLDPRT is clean
-    # for the next orientation.
-    sw.CloseAllDocuments(True)
-    sw.ExitApp()
+from solidworks_tools.com_session import (
+    close_solidworks,
+    get_sw,
+    initialize_com,
+    uninitialize_com,
+)
+from solidworks_tools.config import (
+    DEFAULT_BASE_BODY,
+    DEFAULT_PART_BODY,
+    DEFAULT_PART_FILE,
+    DEFAULT_PLATE_MARGIN_MM,
+    DEFAULT_SUPPORT_LIFT_MM,
+    DEFAULT_Z_MAX_STEPS,
+    DEFAULT_Z_STEP_MM,
+)
+from solidworks_tools.documents import open_part
+from solidworks_tools.export import export_step
+from solidworks_tools.placement import ensure_support_gap, ensure_xy_containment
+from solidworks_tools.transforms import rotate_body
 
 
 def run_workflow(
@@ -726,51 +41,41 @@ def run_workflow(
     plate_margin_mm,
     keep_open=False,
 ):
+    """Run one orientation in one COM session without saving the template.
+
+    The order is deliberate: rotate around the center of mass first, then
+    place the rotated body using its world-coordinate bounds, and only then
+    export the disposable document to STEP.
+    """
     print(f"Part file: {part_file}")
     print(f"STEP output: {step_file}")
     print(f"Rotation: X={rot_x_deg} deg, Y={rot_y_deg} deg, Z={rot_z_deg} deg")
     print(
         "Bounding-box placement: "
-        f"part='{part_body}', base='{base_body}', "
-        f"minimum_gap={support_lift_mm:g} mm"
+        f"part='{part_body}', base='{base_body}', minimum_gap={support_lift_mm:g} mm"
     )
 
-    com_initialized = False
-    try:
-        pythoncom.CoInitialize()
-        com_initialized = True
-    except pythoncom.com_error as exc:
-        # The caller may already have initialized this thread in a different
-        # COM apartment.  In that case, continue using the existing apartment.
-        if getattr(exc, "hresult", None) != -2147417850:  # RPC_E_CHANGED_MODE
-            raise
-
+    com_initialized = initialize_com()
     sw = None
     model = None
-
     try:
         sw = get_sw()
         model = open_part(sw, part_file)
         rotate_body(model, part_body, rot_x_deg, rot_y_deg, rot_z_deg)
-        # Use the rotated world-coordinate bounding boxes directly.  This
-        # avoids hundreds of small COM features and handles flips that place
-        # the part below the build-base plane while its CG remains fixed.
         ensure_xy_containment(model, part_body, base_body, plate_margin_mm)
         ensure_support_gap(model, part_body, base_body, support_lift_mm)
         export_step(model, step_file)
     finally:
         if sw is not None and model is not None and not keep_open:
             close_solidworks(sw)
-        if com_initialized:
-            pythoncom.CoUninitialize()
+        uninitialize_com(com_initialized)
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description=(
-            "Open a SolidWorks part, rotate body 'part', resolve interference "
-            "against body 'base', apply an LPBF support lift, export STEP, "
-            "and close unsaved."
+            "Open a SolidWorks part, rotate body 'part', place it over body "
+            "'base', apply an LPBF support lift, export STEP, and close unsaved."
         )
     )
     parser.add_argument("--part-file", default=str(DEFAULT_PART_FILE))
@@ -780,30 +85,21 @@ def parse_args():
     parser.add_argument("--rot-z", type=float, required=True)
     parser.add_argument("--part-body", default=DEFAULT_PART_BODY)
     parser.add_argument("--base-body", default=DEFAULT_BASE_BODY)
+    # Retained so existing main.py callers remain compatible. Direct placement
+    # now uses bounding boxes and does not need incremental Z settings.
     parser.add_argument("--z-step-mm", type=float, default=DEFAULT_Z_STEP_MM)
     parser.add_argument("--z-max-steps", type=int, default=DEFAULT_Z_MAX_STEPS)
     parser.add_argument("--tolerance-mm", type=float, default=0.0)
     parser.add_argument(
-        "--plate-margin-mm",
-        type=float,
-        default=DEFAULT_PLATE_MARGIN_MM,
-        help=(
-            "Required XY margin from the build-plate edges in millimeters "
-            "(default: 0)."
-        ),
+        "--plate-margin-mm", type=float, default=DEFAULT_PLATE_MARGIN_MM,
+        help="Required XY margin from the build-plate edges in millimeters.",
     )
     parser.add_argument(
-        "--support-lift-mm",
-        type=float,
-        default=DEFAULT_SUPPORT_LIFT_MM,
-        help=(
-            "Additional +Z lift after interference is resolved, leaving space "
-            "for LPBF support generation (default: 2.0 mm)."
-        ),
+        "--support-lift-mm", type=float, default=DEFAULT_SUPPORT_LIFT_MM,
+        help="Extra +Z gap above the base for LPBF supports.",
     )
     parser.add_argument(
-        "--keep-open",
-        action="store_true",
+        "--keep-open", action="store_true",
         help="Leave SolidWorks open after export instead of closing unsaved.",
     )
     return parser.parse_args()
@@ -830,8 +126,5 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        raise SystemExit(main())
-    except Exception as exc:
-        print(f"ERROR: {exc}", file=sys.stderr)
-        raise SystemExit(1)
+    raise SystemExit(main())
+
