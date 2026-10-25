@@ -170,22 +170,25 @@ point, leaving a build gap for additive support generation even after an
 upside-down rotation. The minimum gap is controlled by `--support-lift-mm` when
 calling `solidworks_workflow.py`; set it to `0` to disable the extra gap.
 
-For adaptive local contour mapping around the best previous orientation, run:
+The default workflow is the Sobol plus multi-start contour workflow. It can be
+started with:
 
 ```powershell
-python main.py --contour-map --optimization-iterations 40
+python main.py --optimization-iterations 40
 ```
 
 Contour mode first evaluates explicit flip anchors, then an 8-point,
-dependency-free 3-D Sobol design, and finally uses a 15-degree local contour
-search around the best initial result. If the incumbent does not improve for
+dependency-free 3-D Sobol design, and finally searches 15-degree local contour
+neighborhoods around the three lowest-stress measured orientations. This
+multi-start refinement keeps separate promising basins alive instead of
+following only the first incumbent. If the best result does not improve for
 the configured patience window, the local contour spacing is halved and the
-search continues around the best orientation. Refinement stops after the
-minimum contour spacing is reached and the best average stress has improved by
-less than 5% for the patience window, or when the maximum evaluation cap is
-reached. The search range and stopping behavior can be changed with
+search continues. Refinement stops after the minimum contour spacing is
+reached and the best average stress has improved by less than 5% for the
+patience window, or when the maximum evaluation cap is reached. The search
+range and stopping behavior can be changed with
 `--contour-step`, `--contour-min-step`, `--stop-improvement`,
-`--stop-patience`, and `--optimization-iterations`.
+`--stop-patience`, `--contour-starts`, and `--optimization-iterations`.
 
 Contour candidate selection is exploitation-first: the candidate with the
 lowest predicted average stress is preferred, with expected improvement used
@@ -195,10 +198,18 @@ and the monotonic best-so-far curve; exploratory points may remain above that
 curve.
 
 Contour mode begins with an 8-point, dependency-free 3-D Sobol design by
-default, then switches to local contour refinement around the best Sobol
-orientation. Change the initial design size with `--sobol-initial-runs`, or
-set it to zero to start directly with contour refinement. The same user-selected
-part and base mesh sizes are used for every evaluation.
+default, then switches to multi-start local contour refinement. Change the
+initial design size with `--sobol-initial-runs`, the number of contour basins
+with `--contour-starts`, or set the Sobol count to zero to start directly with
+contour refinement. The same user-selected part and base mesh sizes are used
+for every evaluation. `--contour-map` remains as an explicit compatibility
+alias for the default contour workflow.
+
+The Bayesian controller remains available as an alternative with:
+
+```powershell
+python main.py --optimize --optimization-iterations 40
+```
 
 Before the Sobol design, contour mode asks whether initial sampling symmetry
 should be used. Choosing cyclic symmetry asks for an axis and repeat count,

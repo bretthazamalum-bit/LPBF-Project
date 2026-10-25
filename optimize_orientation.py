@@ -298,17 +298,17 @@ def next_contour_orientation(
     max_angle: float = 90.0,
     contour_step: float = 15.0,
     length_scale: float = 30.0,
+    contour_starts: int = 3,
 ) -> tuple[Candidate | None, dict]:
-    """Select an untested point on a local 3-D contour around the best result.
+    """Select an untested point from several local 3-D contour neighborhoods.
 
-    The contour is the 3x3x3 neighborhood around the incumbent, excluding the
-    center. Expected improvement ranks the contour points using all prior CSV
-    observations, so the search follows measured stress contours instead of
-    blindly scanning the global grid. Candidates are exploitation-first: the
-    lowest predicted average stress is selected, with expected improvement used
-    only to break ties. This keeps the measured sequence focused near the
-    incumbent while the separate best-so-far curve records actual progress.
+    The lowest-stress measured orientations seed independent local searches.
+    Searching multiple basins prevents one early incumbent from monopolizing
+    the refinement phase. Each neighborhood is a 3x3x3 contour stencil and
+    the Gaussian-process estimate ranks candidates across all observations.
     """
+    if contour_starts <= 0:
+        raise ValueError("contour_starts must be positive")
     observations = load_successful_results(csv_file)
     observed = load_attempted_orientations(csv_file)
     if not observations:
@@ -336,20 +336,23 @@ def next_contour_orientation(
     if contour_step <= 0:
         raise ValueError("contour_step must be positive")
 
-    incumbent, best_value = min(observations, key=lambda item: item[1])
+    ordered_observations = sorted(observations, key=lambda item: item[1])
+    starts = ordered_observations[:contour_starts]
+    best_start, best_value = starts[0]
     candidates = []
-    for dx in (-contour_step, 0.0, contour_step):
-        for dy in (-contour_step, 0.0, contour_step):
-            for dz in (-contour_step, 0.0, contour_step):
-                if dx == dy == dz == 0.0:
-                    continue
-                x = _bounded(incumbent.rot_x + dx, min_angle, max_angle)
-                y = _bounded(incumbent.rot_y + dy, min_angle, max_angle)
-                z = _bounded(incumbent.rot_z + dz, min_angle, max_angle)
-                if x is not None and y is not None and z is not None:
-                    candidate = Candidate(x, y, z)
-                    if candidate not in observed and candidate not in candidates:
-                        candidates.append(candidate)
+    for start, _ in starts:
+        for dx in (-contour_step, 0.0, contour_step):
+            for dy in (-contour_step, 0.0, contour_step):
+                for dz in (-contour_step, 0.0, contour_step):
+                    if dx == dy == dz == 0.0:
+                        continue
+                    x = _bounded(start.rot_x + dx, min_angle, max_angle)
+                    y = _bounded(start.rot_y + dy, min_angle, max_angle)
+                    z = _bounded(start.rot_z + dz, min_angle, max_angle)
+                    if x is not None and y is not None and z is not None:
+                        candidate = Candidate(x, y, z)
+                        if candidate not in observed and candidate not in candidates:
+                            candidates.append(candidate)
 
     if not candidates and contour_step > 2.0:
         return next_contour_orientation(
@@ -358,12 +361,13 @@ def next_contour_orientation(
             max_angle=max_angle,
             contour_step=contour_step / 2.0,
             length_scale=length_scale,
+            contour_starts=contour_starts,
         )
     if not candidates:
         return None, {
             "method": "contour_exhausted",
             "observations": len(observations),
-            "incumbent": incumbent.__dict__,
+            "incumbents": [start.__dict__ for start, _ in starts],
         }
 
     scored = []
@@ -377,7 +381,8 @@ def next_contour_orientation(
     return selected, {
         "method": "adaptive_contour_greedy_mean",
         "observations": len(observations),
-        "incumbent": incumbent.__dict__,
+        "incumbents": [start.__dict__ for start, _ in starts],
+        "contour_starts": len(starts),
         "best_average_stress_pa": best_value,
         "contour_step_degrees": contour_step,
         "contour_candidates": len(candidates),

@@ -45,14 +45,6 @@ class OrientationPoint:
     rot_z: float
 
 
-STARTER_POINTS = [
-    OrientationPoint("point_01_baseline", 0.0, 0.0, 0.0),
-    OrientationPoint("point_02_x45", 45.0, 0.0, 0.0),
-    OrientationPoint("point_03_y45", 0.0, 45.0, 0.0),
-    OrientationPoint("point_04_z45", 0.0, 0.0, 45.0),
-]
-
-
 def format_angle(value: float) -> str:
     text = f"{value:g}"
     return text.replace("-", "neg").replace(".", "p")
@@ -484,6 +476,7 @@ def write_run_manifest(
     symmetry_type: str | None = None,
     symmetry_axis: str | None = None,
     symmetry_repeats: int = 1,
+    contour_starts: int = 0,
 ) -> None:
     manifest = {
         "project_root": str(PROJECT_ROOT),
@@ -502,6 +495,7 @@ def write_run_manifest(
             "axis": symmetry_axis,
             "repeats": symmetry_repeats,
         },
+        "contour_starts": contour_starts,
         "step_output_dir": str(STEP_OUTPUT_DIR),
         "results_dir": str(RESULTS_DIR),
         "points": [
@@ -528,8 +522,8 @@ def write_run_manifest(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Rotate the LPBF part in SolidWorks, export STEP files, and run "
-            "Ansys stress results for the four starter orientations."
+            "Run Sobol initialization and multi-start contour refinement for "
+            "LPBF orientation optimization."
         )
     )
     parser.add_argument(
@@ -562,12 +556,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--optimize",
         action="store_true",
-        help="Use adaptive optimization to select orientations from the CSV history.",
+        help="Use Bayesian expected-improvement optimization instead of contour mode.",
     )
     parser.add_argument(
         "--contour-map",
         action="store_true",
-        help="Use local adaptive contour mapping instead of global Bayesian search.",
+        help="Explicitly select the default Sobol plus contour workflow.",
     )
     parser.add_argument(
         "--sobol-initial-runs",
@@ -640,6 +634,15 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--contour-starts",
+        type=int,
+        default=3,
+        help=(
+            "Number of lowest-stress measured orientations used as independent "
+            "contour refinement starts (default: 3)."
+        ),
+    )
+    parser.add_argument(
         "--stop-improvement",
         type=float,
         default=0.05,
@@ -699,10 +702,16 @@ def main() -> int:
         f"part={part_mesh_size_mm} mm, base={base_mesh_size_mm} mm"
     )
 
+    # Contour mode is now the normal workflow. --optimize remains available
+    # for users who want the older global Bayesian expected-improvement path.
+    contour_mode = not args.optimize
+    if args.optimize and args.contour_map:
+        raise ValueError("Use either --optimize or --contour-map, not both.")
+
     symmetry_type = args.symmetry_type
     symmetry_axis = args.symmetry_axis
     symmetry_repeats = args.symmetry_repeats or 1
-    if args.contour_map and args.sobol_initial_runs > 0:
+    if contour_mode and args.sobol_initial_runs > 0:
         if symmetry_type is None:
             symmetry_type, symmetry_axis, symmetry_repeats = choose_sampling_symmetry()
         if symmetry_type == "cyclic" and symmetry_repeats < 2:
@@ -718,15 +727,18 @@ def main() -> int:
     STEP_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    if args.optimize or args.contour_map:
-        if args.optimization_iterations <= 0:
-            raise ValueError("--optimization-iterations must be positive")
-        if args.contour_map and args.contour_min_step <= 0:
-            raise ValueError("--contour-min-step must be positive")
-        if args.contour_map and args.contour_min_step > args.contour_step:
-            raise ValueError("--contour-min-step cannot exceed --contour-step")
-        if args.contour_map and args.sobol_initial_runs < 0:
-            raise ValueError("--sobol-initial-runs cannot be negative")
+    if args.optimization_iterations <= 0:
+        raise ValueError("--optimization-iterations must be positive")
+    if contour_mode and args.contour_min_step <= 0:
+        raise ValueError("--contour-min-step must be positive")
+    if contour_mode and args.contour_min_step > args.contour_step:
+        raise ValueError("--contour-min-step cannot exceed --contour-step")
+    if contour_mode and args.sobol_initial_runs < 0:
+        raise ValueError("--sobol-initial-runs cannot be negative")
+    if contour_mode and args.contour_starts <= 0:
+        raise ValueError("--contour-starts must be positive")
+
+    if contour_mode or args.optimize:
 
         from optimize_orientation import (
             load_successful_results,
@@ -760,15 +772,15 @@ def main() -> int:
             symmetry_axis if symmetry_type == "cyclic" else None,
         )
         next_run_number = next_optimizer_run_number()
-        flip_anchor_count = len(symmetry_anchors) if args.contour_map else 0
+        flip_anchor_count = len(symmetry_anchors) if contour_mode else 0
         sobol_end_iteration = flip_anchor_count + (
-            args.sobol_initial_runs if args.contour_map else 0
+            args.sobol_initial_runs if contour_mode else 0
         )
         for iteration in range(1, args.optimization_iterations + 1):
             previous_observations = load_successful_results(ORIENTATION_RESULTS_CSV)
             previous_best = min((value for _, value in previous_observations), default=None)
-            initial_design_phase = args.contour_map and iteration <= sobol_end_iteration
-            refinement_phase = args.contour_map and iteration > sobol_end_iteration
+            initial_design_phase = contour_mode and iteration <= sobol_end_iteration
+            refinement_phase = contour_mode and iteration > sobol_end_iteration
             if initial_design_phase:
                 candidate, diagnostics = next_sobol_orientation(
                     ORIENTATION_RESULTS_CSV,
@@ -778,12 +790,13 @@ def main() -> int:
                     axis_max_angles=sobol_axis_max_angles,
                     symmetry_anchors=symmetry_anchors,
                 )
-            elif args.contour_map:
+            elif contour_mode:
                 candidate, diagnostics = next_contour_orientation(
                     ORIENTATION_RESULTS_CSV,
                     min_angle=args.optimization_min_angle,
                     max_angle=args.optimization_max_angle,
                     contour_step=contour_step,
+                    contour_starts=args.contour_starts,
                 )
             else:
                 candidate, diagnostics = next_orientation(
@@ -805,7 +818,7 @@ def main() -> int:
             next_run_number += 1
             phase_name = (
                 "flip anchor"
-                if args.contour_map and iteration <= flip_anchor_count
+                if contour_mode and iteration <= flip_anchor_count
                 else "Sobol"
                 if initial_design_phase
                 else "contour refinement"
@@ -861,7 +874,7 @@ def main() -> int:
                     )
                     and stalled_iterations >= args.stop_patience
                 ):
-                    if args.contour_map and contour_step > args.contour_min_step:
+                    if contour_mode and contour_step > args.contour_min_step:
                         previous_step = contour_step
                         contour_step = max(
                             args.contour_min_step,
@@ -887,34 +900,13 @@ def main() -> int:
             part_mesh_size_mm,
             base_mesh_size_mm,
             args.dry_run,
-            args.sobol_initial_runs if args.contour_map else 0,
-            symmetry_type if args.contour_map else None,
-            symmetry_axis if args.contour_map else None,
-            symmetry_repeats if args.contour_map else 1,
+            args.sobol_initial_runs if contour_mode else 0,
+            symmetry_type if contour_mode else None,
+            symmetry_axis if contour_mode else None,
+            symmetry_repeats if contour_mode else 1,
+            args.contour_starts if contour_mode else 0,
         )
         return 0
-
-    for iteration, point in enumerate(STARTER_POINTS, start=1):
-        run_orientation(
-            point,
-            part_file,
-            part_mesh_size_mm,
-            base_mesh_size_mm,
-            args.dry_run,
-            args.skip_ansys,
-        )
-        if not args.dry_run:
-            update_progress_graph()
-            print_progress_summary(point.name, iteration, len(STARTER_POINTS))
-
-    write_run_manifest(
-        STARTER_POINTS,
-        part_file,
-        part_mesh_size_mm,
-        base_mesh_size_mm,
-        args.dry_run,
-    )
-    return 0
 
 
 if __name__ == "__main__":
