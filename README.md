@@ -177,8 +177,8 @@ started with:
 python main.py --optimization-iterations 40
 ```
 
-Contour mode first evaluates explicit flip anchors, then an 8-point,
-dependency-free 3-D Sobol design, and finally searches 15-degree local contour
+Contour mode first evaluates explicit X/Y flip anchors, then an 8-point,
+dependency-free 2-D Sobol design, and finally searches 15-degree local contour
 neighborhoods around the three lowest-stress measured orientations. This
 multi-start refinement keeps separate promising basins alive instead of
 following only the first incumbent. If the best result does not improve for
@@ -197,8 +197,10 @@ orientation. The progress graph still shows both the measured stress values
 and the monotonic best-so-far curve; exploratory points may remain above that
 curve.
 
-Contour mode begins with an 8-point, dependency-free 3-D Sobol design by
-default, then switches to multi-start local contour refinement. Change the
+Contour mode begins with an 8-point, dependency-free 2-D Sobol design by
+default, then switches to multi-start local contour refinement. Rotation about
+Z is fixed at 0 degrees because raster direction is configured independently in
+ANSYS. Change the
 initial design size with `--sobol-initial-runs`, the number of contour basins
 with `--contour-starts`, or set the Sobol count to zero to start directly with
 contour refinement. The same user-selected part and base mesh sizes are used
@@ -211,14 +213,10 @@ The Bayesian controller remains available as an alternative with:
 python main.py --optimize --optimization-iterations 40
 ```
 
-Before the Sobol design, contour mode asks whether initial sampling symmetry
-should be used. Choosing cyclic symmetry asks for an axis and repeat count,
-then limits only the initial Sobol samples to one rotational sector. It also
-adds explicit baseline and flip anchors. ANSYS still runs the complete model
-for every selected orientation; symmetry is never applied inside the solver.
-Use `--symmetry-type none` to disable the prompt, or configure it from the
-command line with `--symmetry-type cyclic --symmetry-axis z
---symmetry-repeats N`.
+Contour mode adds explicit baseline and X/Y flip anchors. ANSYS still runs the
+complete model for every selected orientation; no symmetry reduction is applied
+inside the solver. The legacy symmetry command-line options are retained for
+compatibility but are ignored because Z rotation is fixed at 0 degrees.
 
 The controller rejects missing or non-positive stress values as invalid. Invalid
 orientations remain recorded in the CSV but are excluded from optimization and

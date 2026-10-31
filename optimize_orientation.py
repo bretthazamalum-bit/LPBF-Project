@@ -1,4 +1,4 @@
-"""Lightweight Bayesian optimization for LPBF part orientation.
+"""Lightweight optimization for LPBF part orientation.
 
 The module deliberately uses only the Python standard library. Each call to
 ``next_orientation`` fits a small Gaussian-process surrogate to successful
@@ -17,7 +17,8 @@ from pathlib import Path
 class Candidate:
     rot_x: float
     rot_y: float
-    rot_z: float
+    # Kept in the record/API for compatibility, but Z rotation is fixed at 0.
+    rot_z: float = 0.0
 
 
 def _number(value: str) -> float | None:
@@ -39,9 +40,15 @@ def load_successful_results(csv_file: Path) -> list[tuple[Candidate, float]]:
             value = _number(row.get("average_stress_pa", ""))
             x = _number(row.get("rot_x_deg", ""))
             y = _number(row.get("rot_y_deg", ""))
-            z = _number(row.get("rot_z_deg", ""))
-            if value is not None and x is not None and y is not None and z is not None:
-                observations.append((Candidate(x, y, z), value))
+            z = _number(row.get("rot_z_deg", "0"))
+            if (
+                value is not None
+                and x is not None
+                and y is not None
+                and z is not None
+                and abs(z) <= 1e-9
+            ):
+                observations.append((Candidate(x, y), value))
     return observations
 
 
@@ -54,9 +61,9 @@ def load_attempted_orientations(csv_file: Path) -> set[Candidate]:
         for row in csv.DictReader(handle):
             x = _number(row.get("rot_x_deg", ""))
             y = _number(row.get("rot_y_deg", ""))
-            z = _number(row.get("rot_z_deg", ""))
-            if x is not None and y is not None and z is not None:
-                attempted.add(Candidate(x, y, z))
+            z = _number(row.get("rot_z_deg", "0"))
+            if x is not None and y is not None and z is not None and abs(z) <= 1e-9:
+                attempted.add(Candidate(x, y))
     return attempted
 
 
@@ -64,7 +71,6 @@ def _distance(a: Candidate, b: Candidate, scale: float) -> float:
     return math.sqrt(
         ((a.rot_x - b.rot_x) / scale) ** 2
         + ((a.rot_y - b.rot_y) / scale) ** 2
-        + ((a.rot_z - b.rot_z) / scale) ** 2
     )
 
 
@@ -98,14 +104,19 @@ def _predict(
     candidate: Candidate,
     observations: list[tuple[Candidate, float]],
     length_scale: float,
+    observation_noise: float = 0.02,
 ) -> tuple[float, float]:
     points = [point for point, _ in observations]
     values = [value for _, value in observations]
     scale = max(1.0, max(abs(value) for value in values))
     normalized_values = [value / scale for value in values]
+    if observation_noise < 0:
+        raise ValueError("observation_noise must be non-negative")
+    noise_variance = observation_noise * observation_noise
     covariance = [
         [
-            _kernel(first, second, length_scale) + (1e-8 if row == column else 0.0)
+            _kernel(first, second, length_scale)
+            + (noise_variance + 1e-8 if row == column else 0.0)
             for column, second in enumerate(points)
         ]
         for row, first in enumerate(points)
@@ -135,15 +146,14 @@ def candidate_grid(min_angle: float, max_angle: float, grid_step: float) -> list
     angles = [round(min_angle + index * grid_step, 6) for index in range(count + 1)]
     if not angles or angles[-1] < max_angle - 1e-9:
         angles.append(max_angle)
-    return [Candidate(x, y, z) for x in angles for y in angles for z in angles]
+    return [Candidate(x, y) for x in angles for y in angles]
 
 
-# Direction-number parameters for a small, dependency-free 3-D Sobol sequence.
+# Direction-number parameters for a small, dependency-free 2-D Sobol sequence.
 _SOBOL_BITS = 32
 _SOBOL_PARAMETERS = (
     (1, 0, (1,)),
     (2, 1, (1, 3)),
-    (3, 1, (1, 3, 1)),
 )
 
 
@@ -161,9 +171,7 @@ def _sobol_direction_numbers(dimension: int) -> list[int]:
     return directions
 
 
-_SOBOL_DIRECTIONS = tuple(
-    _sobol_direction_numbers(dimension) for dimension in range(3)
-)
+_SOBOL_DIRECTIONS = tuple(_sobol_direction_numbers(dimension) for dimension in range(2))
 
 
 def initial_orientation_anchors(
@@ -172,18 +180,18 @@ def initial_orientation_anchors(
     symmetry_axis: str | None = None,
 ) -> tuple[Candidate, ...]:
     """Return explicit baseline and flip orientations for initial sampling."""
-    anchors = [Candidate(min_angle, min_angle, min_angle)]
-    for index, axis in enumerate(("x", "y", "z")):
+    anchors = [Candidate(min_angle, min_angle)]
+    for index, axis in enumerate(("x", "y")):
         if axis == symmetry_axis:
             continue
-        values = [min_angle, min_angle, min_angle]
+        values = [min_angle, min_angle]
         values[index] = max_angle
         anchors.append(Candidate(*values))
     return tuple(anchors)
 
 
 def _sobol_unit(index: int, dimension: int) -> float:
-    """Return one coordinate of a 3-D Sobol low-discrepancy sequence."""
+    """Return one coordinate of a 2-D Sobol low-discrepancy sequence."""
     if index < 0:
         raise ValueError("Sobol index must be non-negative")
     gray_code = index ^ (index >> 1)
@@ -204,19 +212,19 @@ def next_sobol_orientation(
     sample_index: int,
     min_angle: float = 0.0,
     max_angle: float = 90.0,
-    axis_max_angles: tuple[float, float, float] | None = None,
+    axis_max_angles: tuple[float, float] | None = None,
     symmetry_anchors: tuple[Candidate, ...] = (),
 ) -> tuple[Candidate | None, dict]:
-    """Return the next untested orientation from a 3-D Sobol design."""
+    """Return the next untested orientation from a 2-D Sobol design."""
     if sample_index < 0:
         raise ValueError("sample_index must be non-negative")
     if min_angle >= max_angle:
         raise ValueError("min_angle must be less than max_angle")
 
     observed = load_attempted_orientations(csv_file)
-    angle_maxima = axis_max_angles or (max_angle, max_angle, max_angle)
-    if len(angle_maxima) != 3 or any(value <= min_angle for value in angle_maxima):
-        raise ValueError("axis_max_angles must contain three values greater than min_angle")
+    angle_maxima = axis_max_angles or (max_angle, max_angle)
+    if len(angle_maxima) != 2 or any(value <= min_angle for value in angle_maxima):
+        raise ValueError("axis_max_angles must contain two values greater than min_angle")
 
     if sample_index < len(symmetry_anchors):
         anchor = symmetry_anchors[sample_index]
@@ -232,7 +240,6 @@ def next_sobol_orientation(
         candidate = Candidate(
             round(min_angle + _sobol_unit(index, 0) * (angle_maxima[0] - min_angle), 6),
             round(min_angle + _sobol_unit(index, 1) * (angle_maxima[1] - min_angle), 6),
-            round(min_angle + _sobol_unit(index, 2) * (angle_maxima[2] - min_angle), 6),
         )
         if candidate not in observed:
             return candidate, {
@@ -299,16 +306,19 @@ def next_contour_orientation(
     contour_step: float = 15.0,
     length_scale: float = 30.0,
     contour_starts: int = 3,
+    exploration_weight: float = 2.0,
 ) -> tuple[Candidate | None, dict]:
-    """Select an untested point from several local 3-D contour neighborhoods.
+    """Select an untested point from several local 2-D contour neighborhoods.
 
     The lowest-stress measured orientations seed independent local searches.
     Searching multiple basins prevents one early incumbent from monopolizing
-    the refinement phase. Each neighborhood is a 3x3x3 contour stencil and
+    the refinement phase. Each neighborhood is a 3x3 contour stencil and
     the Gaussian-process estimate ranks candidates across all observations.
     """
     if contour_starts <= 0:
         raise ValueError("contour_starts must be positive")
+    if exploration_weight < 0:
+        raise ValueError("exploration_weight must be non-negative")
     observations = load_successful_results(csv_file)
     observed = load_attempted_orientations(csv_file)
     if not observations:
@@ -343,16 +353,14 @@ def next_contour_orientation(
     for start, _ in starts:
         for dx in (-contour_step, 0.0, contour_step):
             for dy in (-contour_step, 0.0, contour_step):
-                for dz in (-contour_step, 0.0, contour_step):
-                    if dx == dy == dz == 0.0:
-                        continue
-                    x = _bounded(start.rot_x + dx, min_angle, max_angle)
-                    y = _bounded(start.rot_y + dy, min_angle, max_angle)
-                    z = _bounded(start.rot_z + dz, min_angle, max_angle)
-                    if x is not None and y is not None and z is not None:
-                        candidate = Candidate(x, y, z)
-                        if candidate not in observed and candidate not in candidates:
-                            candidates.append(candidate)
+                if dx == dy == 0.0:
+                    continue
+                x = _bounded(start.rot_x + dx, min_angle, max_angle)
+                y = _bounded(start.rot_y + dy, min_angle, max_angle)
+                if x is not None and y is not None:
+                    candidate = Candidate(x, y)
+                    if candidate not in observed and candidate not in candidates:
+                        candidates.append(candidate)
 
     if not candidates and contour_step > 2.0:
         return next_contour_orientation(
@@ -362,6 +370,7 @@ def next_contour_orientation(
             contour_step=contour_step / 2.0,
             length_scale=length_scale,
             contour_starts=contour_starts,
+            exploration_weight=exploration_weight,
         )
     if not candidates:
         return None, {
@@ -374,9 +383,16 @@ def next_contour_orientation(
     for candidate in candidates:
         mean, deviation = _predict(candidate, observations, length_scale)
         score = _expected_improvement(mean, deviation, best_value)
-        scored.append((score, candidate, mean, deviation))
-    score, selected, predicted_mean, predicted_deviation = min(
-        scored, key=lambda item: (item[2], -item[0])
+        lower_confidence_bound = mean - exploration_weight * deviation
+        scored.append((lower_confidence_bound, score, candidate, mean, deviation))
+    (
+        selected_lcb,
+        score,
+        selected,
+        predicted_mean,
+        predicted_deviation,
+    ) = min(
+        scored, key=lambda item: (item[0], item[2].rot_x, item[2].rot_y)
     )
     return selected, {
         "method": "adaptive_contour_greedy_mean",
@@ -387,6 +403,8 @@ def next_contour_orientation(
         "contour_step_degrees": contour_step,
         "contour_candidates": len(candidates),
         "expected_improvement": score,
+        "lower_confidence_bound": selected_lcb,
+        "exploration_weight": exploration_weight,
         "predicted_average_stress_pa": predicted_mean,
         "predicted_standard_deviation_pa": predicted_deviation,
     }

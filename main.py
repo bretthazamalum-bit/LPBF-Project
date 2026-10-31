@@ -708,21 +708,11 @@ def main() -> int:
     if args.optimize and args.contour_map:
         raise ValueError("Use either --optimize or --contour-map, not both.")
 
-    symmetry_type = args.symmetry_type
-    symmetry_axis = args.symmetry_axis
-    symmetry_repeats = args.symmetry_repeats or 1
-    if contour_mode and args.sobol_initial_runs > 0:
-        if symmetry_type is None:
-            symmetry_type, symmetry_axis, symmetry_repeats = choose_sampling_symmetry()
-        if symmetry_type == "cyclic" and symmetry_repeats < 2:
-            raise ValueError("Cyclic symmetry requires at least 2 repeats.")
-        if symmetry_type == "none":
-            symmetry_axis = "z"
-            symmetry_repeats = 1
-        print(
-            "Initial sampling symmetry: "
-            f"type={symmetry_type}, axis={symmetry_axis}, repeats={symmetry_repeats}"
-        )
+    # Raster direction is configured independently in Ansys. Keep the part's
+    # in-plane yaw fixed at zero and optimize only its X/Y build orientation.
+    symmetry_type = None
+    symmetry_axis = None
+    symmetry_repeats = 1
 
     STEP_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -754,22 +744,11 @@ def main() -> int:
         sobol_axis_max_angles = (
             args.optimization_max_angle,
             args.optimization_max_angle,
-            args.optimization_max_angle,
         )
-        if symmetry_type == "cyclic":
-            cyclic_limit = min(
-                args.optimization_max_angle,
-                360.0 / symmetry_repeats,
-            )
-            axis_index = {"x": 0, "y": 1, "z": 2}[symmetry_axis]
-            sobol_axis_max_angles = tuple(
-                cyclic_limit if index == axis_index else args.optimization_max_angle
-                for index in range(3)
-            )
         symmetry_anchors = initial_orientation_anchors(
             args.optimization_min_angle,
             args.optimization_max_angle,
-            symmetry_axis if symmetry_type == "cyclic" else None,
+            None,
         )
         next_run_number = next_optimizer_run_number()
         flip_anchor_count = len(symmetry_anchors) if contour_mode else 0
@@ -813,7 +792,7 @@ def main() -> int:
                 name=f"bo_{next_run_number:03d}",
                 rot_x=candidate.rot_x,
                 rot_y=candidate.rot_y,
-                rot_z=candidate.rot_z,
+                rot_z=0.0,
             )
             next_run_number += 1
             phase_name = (
