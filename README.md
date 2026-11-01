@@ -245,3 +245,33 @@ The fixed-support setup was verified with a baseline solve: both the transient
 thermal and static structural analyses completed with status `Done`, and the
 static structural result extraction returned nonzero average and maximum stress
 values.
+
+### Post-processing results
+
+Use the dependency-free analyzer after a run to identify the optimized
+orientation and create a contour-style SVG map from the measured orientations:
+
+```powershell
+python analyze_orientation_results.py
+```
+
+It reads `results/orientation_results.csv` and the per-orientation JSON files,
+then writes:
+
+- `results/orientation_summary.txt` — successful/failed counts, the lowest
+  average-stress orientation, the lowest maximum-stress orientation, stress
+  improvement from the zero-degree baseline, file paths, and the top ten results.
+- `results/orientation_contour_map.svg` — an interpolated Rx/Ry stress map for
+  the Rz slice containing the most successful results, with measured points and
+  the best point marked.
+
+The default optimization target is average equivalent stress. To map and rank
+by maximum stress instead, run:
+
+```powershell
+python analyze_orientation_results.py --metric max
+```
+
+For runs containing multiple Z-rotation slices, select one explicitly with
+`--rz 0`. The SVG is generated without matplotlib or other third-party
+packages and can be opened directly in a browser or imported into a report.
