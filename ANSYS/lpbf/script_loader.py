@@ -32,11 +32,18 @@ def import_geometry_script(step_file: Path) -> str:
     )
 
 
-def mesh_script(part_mesh_size_mm: float, base_mesh_size_mm: float) -> str:
+def mesh_script(
+    part_mesh_size_mm: float,
+    base_mesh_size_mm: float,
+    part_material: str = "Inconel 718",
+    base_material: str = "Inconel 718",
+) -> str:
     return load_mechanical_script(
         "mesh_geometry.py",
         {
             "__PART_MESH_SIZE__": f"{part_mesh_size_mm:.12g}",
             "__BASE_MESH_SIZE__": f"{base_mesh_size_mm:.12g}",
+            "__PART_MATERIAL__": repr(part_material),
+            "__BASE_MATERIAL__": repr(base_material),
         },
     )

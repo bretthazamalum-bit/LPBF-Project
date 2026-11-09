@@ -1,0 +1,22 @@
+{
+  "id": "316l_stainless_steel",
+  "display_name": "316L Stainless Steel",
+  "ansys_part_material": "316L Stainless Steel",
+  "ansys_base_material": "Inconel 718",
+  "material_card_policy": "Use ANSYS built-in temperature-dependent AM material data; literature values below are validation references only.",
+  "literature_reference": {
+    "temperature_c": 20,
+    "density_kg_m3": [7950, 8000],
+    "youngs_modulus_gpa": [190, 200],
+    "poissons_ratio": [0.29, 0.31],
+    "thermal_conductivity_w_mk": [14, 16.5],
+    "specific_heat_j_kgk": [450, 510],
+    "thermal_expansion_1_k": [1.5e-5, 1.7e-5],
+    "melting_range_c": [1370, 1400]
+  },
+  "literature_sources": [
+    "https://pmc.ncbi.nlm.nih.gov/articles/PMC8193647/",
+    "https://www.sciencedirect.com/topics/materials-science/austenitic-stainless-steel",
+    "https://doi.org/10.1016/j.pmatsci.2020.100703"
+  ]
+}

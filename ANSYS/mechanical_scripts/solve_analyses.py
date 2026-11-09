@@ -26,9 +26,47 @@ ExtAPI.Log.WriteMessage(
     + str(solver_configuration.SolveProcessSettings.MaxNumberOfCores)
 )
 
+# Apply the process values documented in the Miral Patel Inconel 718 report.
+# These assignments are made to the disposable Mechanical copy only; the
+# repository template is never saved back over.  The values are explicit here
+# rather than relying on whatever process settings happen to be stored in the
+# template.
+am_build_settings = None
+for am_child in am_process.Children:
+    if str(am_child.Name).strip().lower() == "build settings":
+        am_build_settings = am_child
+        break
+if am_build_settings is None:
+    raise Exception("Could not find AM Process Build Settings.")
+
+am_build_settings.DepositionThickness = Quantity("0.03 [mm]")
+am_build_settings.HatchSpacing = Quantity("0.07 [mm]")
+am_build_settings.ScanSpeed = Quantity("1000 [mm sec^-1]")
+am_build_settings.DwellTime = Quantity("10 [sec]")
+am_build_settings.PreheatTemperature = Quantity("170 [C]")
+am_build_settings.RoomTemperature = Quantity("21 [C]")
+am_build_settings.BuildGasTemperature = Quantity("170 [C]")
+am_build_settings.BuildPowderTemperature = Quantity("170 [C]")
+am_build_settings.CooldownGasTemperature = Quantity("21 [C]")
+am_build_settings.CooldownPowderTemperature = Quantity("21 [C]")
+
+# Keep the AM process display/deposition layer height consistent with the
+# report's 30-micron deposition thickness where the property is available.
+try:
+    am_process.LayerHeight = Quantity("0.03 [mm]")
+except Exception as error:
+    ExtAPI.Log.WriteMessage("Could not set AM process LayerHeight: " + str(error))
+
+ExtAPI.Log.WriteMessage(
+    "Applied IN718 process settings: deposition=0.03 mm; hatch=0.07 mm; "
+    "scan=1000 mm/s; dwell=10 s; preheat/gas/powder=170 C; "
+    "room/cooldown=21 C"
+)
+
 temperature_load = DataModel.GetObjectsByName("Temperature")[0]
 temperature_load.Location = base_selection
-temperature_load.Magnitude = Quantity("80 [C]")
+temperature_load.Magnitude = Quantity("170 [C]")
+ExtAPI.Log.WriteMessage("Applied build-phase base temperature: 170 C")
 
 
 def point_coordinates(point):

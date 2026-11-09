@@ -1,0 +1,22 @@
+{
+  "id": "ti_6al_4v",
+  "display_name": "Ti-6Al-4V",
+  "ansys_part_material": "Ti - 6 Al - 4 V",
+  "ansys_base_material": "Inconel 718",
+  "material_card_policy": "Use ANSYS built-in temperature-dependent AM material data; literature values below are validation references only.",
+  "literature_reference": {
+    "temperature_c": 20,
+    "density_kg_m3": [4420, 4430],
+    "youngs_modulus_gpa": [109, 115],
+    "poissons_ratio": [0.33, 0.35],
+    "thermal_conductivity_w_mk": [6.8, 7.5],
+    "specific_heat_j_kgk": [500, 611],
+    "thermal_expansion_1_k": [8.7e-6, 9.5e-6],
+    "melting_range_c": [1600, 1660]
+  },
+  "literature_sources": [
+    "https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=928052",
+    "https://cervera.rmee.upc.edu/papers/2019-ADDMA-DED-pre.pdf",
+    "https://academic.oup.com/view-large/533029072"
+  ]
+}

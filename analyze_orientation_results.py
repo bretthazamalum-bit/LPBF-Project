@@ -17,12 +17,74 @@ import csv
 import html
 import json
 import math
+import shutil
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent
 DEFAULT_RESULTS = ROOT / "results"
+
+
+def render_svg_png(svg_path: Path, png_path: Path) -> bool:
+    """Render an SVG to PNG using an available local renderer.
+
+    No renderer is required for the workflow: SVG remains the primary output.
+    The fallback chain makes PNG output work on common Windows installations
+    without adding a Python package to the project environment.
+    """
+    svg_path = svg_path.resolve()
+    png_path = png_path.resolve()
+    png_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        import cairosvg  # type: ignore
+
+        cairosvg.svg2png(url=str(svg_path), write_to=str(png_path), output_width=1100)
+        return png_path.exists()
+    except (ImportError, OSError, RuntimeError):
+        pass
+
+    converters = []
+    magick = shutil.which("magick")
+    if magick:
+        converters.append([magick, str(svg_path), str(png_path)])
+    inkscape = shutil.which("inkscape")
+    if inkscape:
+        converters.append([inkscape, str(svg_path), "--export-type=png", f"--export-filename={png_path}"])
+    rsvg = shutil.which("rsvg-convert")
+    if rsvg:
+        converters.append([rsvg, "-o", str(png_path), str(svg_path)])
+
+    edge_candidates = [
+        shutil.which("msedge"),
+        shutil.which("chrome"),
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    ]
+    for browser in edge_candidates:
+        if browser and Path(browser).is_file():
+            converters.append([
+                browser,
+                "--headless=new",
+                "--disable-gpu",
+                "--hide-scrollbars",
+                "--run-all-compositor-stages-before-draw",
+                "--window-size=1100,760",
+                f"--screenshot={png_path}",
+                Path(svg_path).as_uri(),
+            ])
+            break
+
+    for command in converters:
+        try:
+            subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=45)
+            if png_path.exists() and png_path.stat().st_size > 0:
+                return True
+        except (OSError, subprocess.SubprocessError):
+            continue
+    return False
 
 
 @dataclass(frozen=True)
@@ -184,7 +246,8 @@ def interpolated_value(rx: float, ry: float, points: list[tuple[float, float, fl
 
 def write_contour_svg(path: Path, observations: list[Observation], metric: str, rz: float) -> None:
     width, height = 1100, 760
-    left, top, plot_w, plot_h = 100, 70, 820, 580
+    # Keep the Y-axis title and tick values in separate horizontal lanes.
+    left, top, plot_w, plot_h = 130, 70, 790, 580
     values = [metric_value(item, metric) for item in observations]
     points = [
         (item.rx, item.ry, value)
@@ -239,7 +302,7 @@ def write_contour_svg(path: Path, observations: list[Observation], metric: str, 
         y = min_y + (max_y - min_y) * tick / 5
         labels += [
             f'<text x="{sx(x):.2f}" y="{top+plot_h+28}" text-anchor="middle" font-size="13">{x:g}</text>',
-            f'<text x="{left-12}" y="{sy(y)+5:.2f}" text-anchor="end" font-size="13">{y:g}</text>',
+            f'<text x="{left-18}" y="{sy(y)+5:.2f}" text-anchor="end" font-size="13">{y:g}</text>',
         ]
     svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
 <rect width="100%" height="100%" fill="white"/>
@@ -258,7 +321,14 @@ def write_contour_svg(path: Path, observations: list[Observation], metric: str, 
     path.write_text(svg, encoding="utf-8")
 
 
-def write_summary(path: Path, observations: list[Observation], metric: str, rz: float, map_path: Path) -> None:
+def write_summary(
+    path: Path,
+    observations: list[Observation],
+    metric: str,
+    rz: float,
+    map_path: Path,
+    metadata: dict[str, object] | None = None,
+) -> None:
     valid = [item for item in observations if item.valid]
     best_avg = min(valid, key=lambda item: item.average_pa) if valid else None
     best_max = min((item for item in valid if item.maximum_pa is not None), key=lambda item: item.maximum_pa, default=None)
@@ -268,6 +338,24 @@ def write_summary(path: Path, observations: list[Observation], metric: str, rz: 
     lines = [
         "LPBF ORIENTATION RESULTS SUMMARY",
         "=" * 34,
+    ]
+    if metadata:
+        lines += [
+            "",
+            "RUN INFORMATION",
+            "---------------",
+            f"Run started (UTC): {metadata.get('run_started_at_utc', 'n/a')}",
+            f"Run completed (UTC): {metadata.get('run_completed_at_utc', 'n/a')}",
+            f"Total run time: {metadata.get('total_runtime', 'n/a')}",
+            f"Part: {metadata.get('part_file', 'n/a')}",
+            f"Workflow: {metadata.get('workflow', 'n/a')}",
+            f"Part mesh size: {metadata.get('part_mesh_size_mm', 'n/a')} mm",
+            f"Base mesh size: {metadata.get('base_mesh_size_mm', 'n/a')} mm",
+            f"Requested solver cores: {metadata.get('solver_cores', 'n/a')}",
+            f"Maximum allowed evaluations: {metadata.get('maximum_evaluations', 'n/a')}",
+        ]
+    lines += [
+        "",
         f"Records read: {len(observations)}",
         f"Successful simulations: {len(valid)}",
         f"Failed/incomplete simulations: {len(observations) - len(valid)}",
@@ -291,7 +379,14 @@ def write_summary(path: Path, observations: list[Observation], metric: str, rz: 
     if baseline and best_avg and baseline.average_pa:
         improvement = (baseline.average_pa - best_avg.average_pa) / baseline.average_pa * 100
         lines += [f"Baseline average stress: {fmt_stress(baseline.average_pa)}", f"Average-stress improvement: {improvement:.2f}%"]
-    lines += ["", f"Contour map: {map_path}", "", "TOP ORIENTATIONS BY AVERAGE STRESS", "-------------------------------"]
+    lines += [
+        "",
+        f"Contour map: {map_path}",
+        f"Contour map PNG: {map_path.with_suffix('.png')}",
+        "",
+        "TOP ORIENTATIONS BY AVERAGE STRESS",
+        "-------------------------------",
+    ]
     for rank, item in enumerate(sorted(valid, key=lambda item: item.average_pa)[:10], 1):
         lines.append(f"{rank:2d}. {item.run_id}: Rx={item.rx:g}°, Ry={item.ry:g}°, Rz={item.rz:g}°; avg={fmt_stress(item.average_pa)}; max={fmt_stress(item.maximum_pa)}")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -315,8 +410,10 @@ def main() -> int:
     if not selected:
         raise SystemExit(f"No successful results found for Rz={rz:g} degrees")
     map_path = output_dir / "orientation_contour_map.svg"
+    map_png_path = output_dir / "orientation_contour_map.png"
     summary_path = output_dir / "orientation_summary.txt"
     write_contour_svg(map_path, selected, args.metric, rz)
+    rendered = render_svg_png(map_path, map_png_path)
     write_summary(summary_path, observations, args.metric, rz, map_path)
     best = min(selected, key=lambda item: metric_value(item, args.metric))
     print(f"Successful simulations: {len(valid)}")
@@ -325,6 +422,7 @@ def main() -> int:
     print(f"Maximum stress: {fmt_stress(best.maximum_pa)}")
     print(f"Summary: {summary_path}")
     print(f"Contour map: {map_path}")
+    print(f"Contour map PNG: {map_png_path if rendered else 'not rendered (no local SVG renderer found)'}")
     return 0
 
 

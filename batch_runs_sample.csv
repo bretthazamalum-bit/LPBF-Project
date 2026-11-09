@@ -1,0 +1,10 @@
+run_name,part_file,material,part_mesh_size_mm,base_mesh_size_mm,optimization_iterations
+compressor_wheel_inconel_3mm,Solidworks/compressor wheel.SLDPRT,inconel_718,3,5,50
+compressor_wheel_inconel_2mm,Solidworks/compressor wheel.SLDPRT,inconel_718,2,5,50
+compressor_wheel_inconel_1.5mm,Solidworks/compressor wheel.SLDPRT,inconel_718,1.5,5,50
+part1_inconel_0.5mm,Solidworks/Part1.SLDPRT,inconel_718,0.3,1,50
+turbine_blade_inconel_4mm,Solidworks/Turbine Blade AM design.SLDPRT,inconel_718,3,5,50
+turbine_blade_inconel_3mm,Solidworks/Turbine Blade AM design.SLDPRT,inconel_718,2,5,50
+turbine_blade_inconel_2mm,Solidworks/Turbine Blade AM design.SLDPRT,inconel_718,1.5,5,50
+exhaust_manifold_inconel_4mm,Solidworks/Exhaust Manifold.SLDPRT,inconel_718,4,10,50
+exhaust_manifold_inconel_3mm,Solidworks/Exhaust Manifold.SLDPRT,inconel_718,3,10,50

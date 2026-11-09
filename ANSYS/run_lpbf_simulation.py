@@ -33,6 +33,7 @@ from lpbf.script_loader import (
     import_geometry_script,
     mesh_script,
 )
+from lpbf.material_config import load_material_config
 from lpbf.session import (
     MECHANICAL_EXECUTABLE,
     MECHANICAL_VERSION,
@@ -175,12 +176,13 @@ def write_orientation_csv(
     csv_file.parent.mkdir(parents=True, exist_ok=True)
     stress_results = stress_results or {}
     fieldnames = [
-        "run_id", "status", "rot_x_deg", "rot_y_deg", "rot_z_deg",
+        "run_id", "material_id", "status", "rot_x_deg", "rot_y_deg", "rot_z_deg",
         "average_stress_pa", "max_stress_pa", "min_stress_pa", "stress_units",
         "step_file", "result_file", "started_at_utc", "completed_at_utc", "error",
     ]
     row = {
         "run_id": args.run_id,
+        "material_id": args.material_config_data["id"],
         "status": status,
         "rot_x_deg": args.rot_x,
         "rot_y_deg": args.rot_y,
@@ -212,6 +214,13 @@ def write_result_file(args: argparse.Namespace, stress_results: dict, *, status:
     result_file.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "run_id": args.run_id,
+        "material": {
+            "id": args.material_config_data["id"],
+            "display_name": args.material_config_data["display_name"],
+            "ansys_part_material": args.material_config_data["ansys_part_material"],
+            "ansys_base_material": args.material_config_data["ansys_base_material"],
+            "config_path": args.material_config_data["config_path"],
+        },
         "status": status,
         "step_file": str(Path(args.step_file).resolve()),
         "rotation_degrees": {
@@ -248,6 +257,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--result-file")
     parser.add_argument(
+        "--material-config",
+        default=None,
+        help="JSON material configuration; defaults to materials/inconel_718.json.",
+    )
+    parser.add_argument(
         "--screenshot-file",
         help="PNG path for the equivalent-stress viewport image.",
     )
@@ -266,6 +280,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    args.material_config_data = load_material_config(args.material_config)
     step_file = Path(args.step_file).resolve()
     started_at = datetime.now(timezone.utc).isoformat()
 
@@ -310,6 +325,12 @@ def main() -> int:
         print(f"step_file={step_file}")
         print(f"template_copy={run_template}")
         print(f"rotation_degrees=({args.rot_x}, {args.rot_y}, {args.rot_z})")
+        print(
+            "material="
+            f"{args.material_config_data['display_name']} "
+            f"(part={args.material_config_data['ansys_part_material']}, "
+            f"base={args.material_config_data['ansys_base_material']})"
+        )
 
         print("template opened in visible Mechanical GUI")
         # Do not issue a separate Project.Save() here.  In the visible
@@ -322,7 +343,12 @@ def main() -> int:
         run_stage(
             mechanical_session,
             "meshing geometry",
-            mesh_script(args.part_mesh_size_mm, args.base_mesh_size_mm),
+            mesh_script(
+                args.part_mesh_size_mm,
+                args.base_mesh_size_mm,
+                args.material_config_data["ansys_part_material"],
+                args.material_config_data["ansys_base_material"],
+            ),
         )
         run_stage(mechanical_session, "solving analyses", SOLVE_SCRIPT)
 

@@ -264,6 +264,16 @@ then writes:
 - `results/orientation_contour_map.svg` — an interpolated Rx/Ry stress map for
   the Rz slice containing the most successful results, with measured points and
   the best point marked.
+- `results/orientation_contour_map.png` — PNG rendering of the contour map when
+  a local SVG renderer is available.
+
+At the end of a normal optimization run, `main.py` also writes
+`results/run_summary.txt` with the run start/end time, total runtime, selected
+part, mesh sizes, requested solver cores, workflow type, number of evaluations,
+stress reduction from baseline, best orientations, and output-file paths. The
+controller also refreshes `results/stress_progress.png` beside the live
+`stress_progress.svg`. SVG labels use collision-aware placement so close
+evaluations do not overwrite one another.
 
 The default optimization target is average equivalent stress. To map and rank
 by maximum stress instead, run:
@@ -271,6 +281,57 @@ by maximum stress instead, run:
 ```powershell
 python analyze_orientation_results.py --metric max
 ```
+
+### Material configurations
+
+When launched normally, the main workflow shows a material-selection popup.
+For unattended runs it also accepts `--material` with these values:
+
+```powershell
+python main.py --material inconel_718
+python main.py --material 316l_stainless_steel
+python main.py --material ti_6al_4v
+```
+
+The JSON files under `materials/` select ANSYS Engineering Data material
+records and retain literature room-temperature ranges for sanity checking.
+The ANSYS temperature-dependent material card remains authoritative. The
+print-part material is assigned automatically; the configured base material
+is recorded, but the base body keeps the template's current material unless
+that material card has first been loaded into the Engineering Data project.
+
+Use `--output-dir` to isolate a run's generated files from the project-level
+folders:
+
+```powershell
+python main.py --part-file "C:\Parts\bracket.SLDPRT" `
+  --material 316l_stainless_steel `
+  --part-mesh-size-mm 0.8 --base-mesh-size-mm 2.0 `
+  --output-dir "results\bracket"
+```
+
+The selected directory receives its own `generated_steps` and `results`
+subdirectories, including CSV/JSON results, screenshots, graphs, maps, and
+the run summary. If omitted, the original project-level folders are used.
+
+For multiple parts or mesh cases, use the CSV batch runner:
+
+```powershell
+python batch_runner.py --csv batch_runs_sample.csv
+```
+
+Optimizer settings are kept separately in `optimizer_settings.csv`, so the
+same Sobol and contour behavior can be applied to many part rows without
+duplicating optimizer columns in the part manifest. The batch runner loads this
+file automatically; use `--optimizer-config` to select another one.
+
+The provided settings retain 8 Sobol evaluations, use one contour refinement
+start, and stop after five consecutive evaluations improve the best stress by
+less than 1%, subject to the minimum evaluation count and the per-row maximum.
+
+It runs cases sequentially and derives a unique folder from the run name,
+part, material, part mesh, and base mesh. A 1 mm and 2 mm case for the same
+part therefore receive separate output folders automatically.
 
 For runs containing multiple Z-rotation slices, select one explicitly with
 `--rz 0`. The SVG is generated without matplotlib or other third-party

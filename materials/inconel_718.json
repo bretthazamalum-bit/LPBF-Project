@@ -1,0 +1,21 @@
+{
+  "id": "inconel_718",
+  "display_name": "Inconel 718",
+  "ansys_part_material": "Inconel 718",
+  "ansys_base_material": "Inconel 718",
+  "material_card_policy": "Use ANSYS built-in temperature-dependent AM material data; literature values below are validation references only.",
+  "literature_reference": {
+    "temperature_c": 20,
+    "density_kg_m3": [8190, 8240],
+    "youngs_modulus_gpa": [199, 215],
+    "poissons_ratio": [0.29, 0.31],
+    "thermal_conductivity_w_mk": [10.5, 11.4],
+    "specific_heat_j_kgk": [435, 435],
+    "thermal_expansion_1_k": [1.18e-5, 1.35e-5],
+    "melting_range_c": [1260, 1335]
+  },
+  "literature_sources": [
+    "https://www.mdpi.com/1996-1944/13/19/4341",
+    "https://pmc.ncbi.nlm.nih.gov/articles/PMC12347657/"
+  ]
+}

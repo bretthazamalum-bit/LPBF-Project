@@ -93,5 +93,12 @@ try:
 except Exception as error:
     log_message("Optional Generated Support not present; continuing: " + str(error))
 
-part_body.Material = "Inconel 718"
+part_body.Material = __PART_MATERIAL__
+base_body.Material = __BASE_MATERIAL__
+log_message(
+    "Material assignments: part="
+    + str(part_body.Material)
+    + "; base="
+    + str(base_body.Material)
+)
 

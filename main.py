@@ -9,14 +9,19 @@ import csv
 import re
 import subprocess
 import sys
+import time
+from datetime import datetime, timezone
 from html import escape
 from dataclasses import asdict, dataclass
 from pathlib import Path
+
+from analyze_orientation_results import render_svg_png
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 SOLIDWORKS_DIR = PROJECT_ROOT / "Solidworks"
 ANSYS_DIR = PROJECT_ROOT / "ANSYS"
+MATERIALS_DIR = PROJECT_ROOT / "materials"
 PROJECT_PYTHON = (
     PROJECT_ROOT / ".venv" / "Scripts" / "python.exe"
     if (PROJECT_ROOT / ".venv" / "Scripts" / "python.exe").exists()
@@ -30,11 +35,18 @@ STEP_OUTPUT_DIR = PROJECT_ROOT / "generated_steps"
 RESULTS_DIR = PROJECT_ROOT / "results"
 ORIENTATION_RESULTS_CSV = RESULTS_DIR / "orientation_results.csv"
 PROGRESS_GRAPH_FILE = RESULTS_DIR / "stress_progress.svg"
+PROGRESS_GRAPH_PNG_FILE = RESULTS_DIR / "stress_progress.png"
 Z_CLEARANCE_STEP_MM = 0.25
 Z_CLEARANCE_MAX_STEPS = 400
 LPBF_SUPPORT_LIFT_MM = 2.0
 
 ANSYS_ENABLED = True
+DEFAULT_MATERIAL_ID = "inconel_718"
+MATERIAL_OPTIONS = {
+    "inconel_718": "Inconel 718",
+    "316l_stainless_steel": "316L Stainless Steel",
+    "ti_6al_4v": "Ti-6Al-4V",
+}
 
 
 @dataclass(frozen=True)
@@ -45,9 +57,89 @@ class OrientationPoint:
     rot_z: float
 
 
+def material_config_path(material_id: str) -> Path:
+    path = MATERIALS_DIR / f"{material_id}.json"
+    if not path.is_file():
+        raise FileNotFoundError(f"Material configuration not found: {path}")
+    return path
+
+
+def load_material_config(material_id: str) -> dict:
+    path = material_config_path(material_id)
+    config = json.loads(path.read_text(encoding="utf-8"))
+    for key in ("id", "display_name", "ansys_part_material", "ansys_base_material"):
+        if not config.get(key):
+            raise ValueError(f"Material configuration missing '{key}': {path}")
+    config["config_path"] = str(path)
+    return config
+
+
+def load_optimizer_config(args: argparse.Namespace, config_path: Path | None) -> argparse.Namespace:
+    """Apply one-row optimizer settings from a separate CSV file."""
+    if config_path is None:
+        return args
+    path = config_path.expanduser()
+    if not path.is_absolute():
+        path = PROJECT_ROOT / path
+    path = path.resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"Optimizer configuration not found: {path}")
+
+    with path.open(newline="", encoding="utf-8-sig") as handle:
+        reader = csv.DictReader(handle)
+        rows = list(reader)
+    if len(rows) != 1:
+        raise ValueError(f"Optimizer configuration must contain exactly one data row: {path}")
+
+    row = rows[0]
+    fields = {
+        "sobol_initial_runs": int,
+        "contour_starts": int,
+        "contour_step": float,
+        "contour_min_step": float,
+        "stop_improvement": float,
+        "stop_patience": int,
+        "minimum_optimization_iterations": int,
+    }
+    for field, converter in fields.items():
+        value = row.get(field, "").strip()
+        if value == "":
+            raise ValueError(f"Optimizer configuration is missing '{field}': {path}")
+        setattr(args, field, converter(value))
+    print(f"Loaded optimizer settings: {path}")
+    return args
+
+
 def format_angle(value: float) -> str:
     text = f"{value:g}"
     return text.replace("-", "neg").replace(".", "p")
+
+
+def configure_output_directory(output_dir: Path | None) -> Path:
+    """Redirect generated artifacts while preserving the legacy default layout."""
+    global STEP_OUTPUT_DIR
+    global RESULTS_DIR
+    global ORIENTATION_RESULTS_CSV
+    global PROGRESS_GRAPH_FILE
+    global PROGRESS_GRAPH_PNG_FILE
+
+    if output_dir is None:
+        resolved = PROJECT_ROOT
+    else:
+        candidate = output_dir.expanduser()
+        resolved = (PROJECT_ROOT / candidate).resolve() if not candidate.is_absolute() else candidate.resolve()
+
+    if resolved == PROJECT_ROOT:
+        STEP_OUTPUT_DIR = PROJECT_ROOT / "generated_steps"
+        RESULTS_DIR = PROJECT_ROOT / "results"
+    else:
+        STEP_OUTPUT_DIR = resolved / "generated_steps"
+        RESULTS_DIR = resolved / "results"
+
+    ORIENTATION_RESULTS_CSV = RESULTS_DIR / "orientation_results.csv"
+    PROGRESS_GRAPH_FILE = RESULTS_DIR / "stress_progress.svg"
+    PROGRESS_GRAPH_PNG_FILE = RESULTS_DIR / "stress_progress.png"
+    return resolved
 
 
 def step_path_for(point: OrientationPoint) -> Path:
@@ -83,7 +175,9 @@ def update_progress_graph() -> None:
         return
 
     width, height = 1000, 620
-    left, right, top, bottom = 90, 30, 70, 80
+    # Leave a dedicated lane for the Y-axis title to the left of the tick
+    # values.  The old x=10 tick labels overlapped the rotated title at x=18.
+    left, right, top, bottom = 110, 30, 70, 80
     plot_width = width - left - right
     plot_height = height - top - bottom
     x_max = max(1, len(rows))
@@ -117,21 +211,48 @@ def update_progress_graph() -> None:
         y = y_position(value)
         grid.append(
             f'<line x1="{left}" y1="{y:.1f}" x2="{width-right}" y2="{y:.1f}" '
-            'stroke="#d9d9d9"/><text x="10" y="{:.1f}" font-size="12">{:.1f} MPa</text>'.format(
+            'stroke="#d9d9d9"/><text x="90" y="{:.1f}" text-anchor="end" font-size="12">{:.1f} MPa</text>'.format(
                 y + 4, value / 1e6
             )
         )
 
     circles = []
-    labels = []
+    label_candidates = []
     for index, value, run_id in rows:
         x, y = x_position(index), y_position(value)
         circles.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="5" fill="#1769aa"/>')
         if len(rows) <= 12 or index == len(rows):
-            labels.append(
-                f'<text x="{x:.1f}" y="{y-10:.1f}" text-anchor="middle" '
-                f'font-size="11">{escape(run_id)} {value/1e6:.1f}</text>'
-            )
+            label_candidates.append((index == len(rows), x, y, f"{run_id} {value/1e6:.1f}"))
+
+    # Keep only labels whose estimated bounding boxes do not overlap. Always
+    # prioritize the newest evaluation, then place labels above/below points.
+    labels = []
+    occupied = []
+    for _, x, y, text in sorted(label_candidates, reverse=True):
+        box_width = max(34.0, len(text) * 6.2 + 8.0)
+        placed = None
+        for offset in (-12.0, 22.0, -30.0, 40.0):
+            baseline = max(top + 13.0, min(height - bottom - 4.0, y + offset))
+            box = (x - box_width / 2, baseline - 13.0, x + box_width / 2, baseline + 3.0)
+            if all(
+                box[2] < other[0] - 3
+                or box[0] > other[2] + 3
+                or box[3] < other[1] - 3
+                or box[1] > other[3] + 3
+                for other in occupied
+            ):
+                placed = (baseline, box)
+                break
+        if placed is None:
+            continue
+        baseline, box = placed
+        occupied.append(box)
+        labels.append(
+            f'<rect x="{box[0]:.1f}" y="{box[1]:.1f}" width="{box_width:.1f}" height="16" '
+            f'fill="white" fill-opacity="0.82"/>'
+            f'<text x="{x:.1f}" y="{baseline:.1f}" text-anchor="middle" '
+            f'font-size="11">{escape(text)}</text>'
+        )
 
     svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
 <rect width="100%" height="100%" fill="white"/>
@@ -151,6 +272,7 @@ def update_progress_graph() -> None:
 '''
     PROGRESS_GRAPH_FILE.parent.mkdir(parents=True, exist_ok=True)
     PROGRESS_GRAPH_FILE.write_text(svg, encoding="utf-8")
+    render_svg_png(PROGRESS_GRAPH_FILE, PROGRESS_GRAPH_PNG_FILE)
 
 
 def print_progress_summary(label: str, iteration: int, total: int | None) -> None:
@@ -278,6 +400,59 @@ def choose_mesh_sizes(
     return part_mesh_size, base_mesh_size
 
 
+def choose_material() -> str:
+    """Show a dropdown for the printable-part material configuration."""
+    try:
+        import tkinter as tk
+        from tkinter import ttk
+    except ImportError as error:
+        raise RuntimeError(
+            "The material picker requires tkinter. Use --material from a command line instead."
+        ) from error
+
+    selected_material = {"id": None}
+    root = tk.Tk()
+    root.title("Select LPBF material")
+    root.attributes("-topmost", True)
+    root.resizable(False, False)
+
+    frame = ttk.Frame(root, padding=14)
+    frame.grid(row=0, column=0, sticky="nsew")
+    ttk.Label(frame, text="Material for the printed part:").grid(
+        row=0, column=0, padx=4, pady=(0, 8), sticky="w"
+    )
+    labels = list(MATERIAL_OPTIONS.values())
+    dropdown = ttk.Combobox(frame, values=labels, state="readonly", width=28)
+    dropdown.current(labels.index(MATERIAL_OPTIONS[DEFAULT_MATERIAL_ID]))
+    dropdown.grid(row=1, column=0, padx=4, pady=(0, 12), sticky="ew")
+
+    def accept():
+        selected_label = dropdown.get()
+        selected_material["id"] = next(
+            material_id
+            for material_id, display_name in MATERIAL_OPTIONS.items()
+            if display_name == selected_label
+        )
+        root.destroy()
+
+    def cancel():
+        root.destroy()
+
+    buttons = ttk.Frame(frame)
+    buttons.grid(row=2, column=0, sticky="e")
+    ttk.Button(buttons, text="Cancel", command=cancel).grid(row=0, column=0, padx=(0, 6))
+    ttk.Button(buttons, text="Continue", command=accept).grid(row=0, column=1)
+    dropdown.focus_set()
+    root.bind("<Return>", lambda _event: accept())
+    root.bind("<Escape>", lambda _event: cancel())
+    root.protocol("WM_DELETE_WINDOW", cancel)
+    root.mainloop()
+
+    if selected_material["id"] is None:
+        raise SystemExit("Material selection was cancelled; exiting without a run.")
+    return selected_material["id"]
+
+
 def choose_sampling_symmetry() -> tuple[str, str, int]:
     """Ask how symmetry may be used to reduce only initial sampling."""
     try:
@@ -403,6 +578,7 @@ def run_orientation(
     base_mesh_size_mm: float,
     dry_run: bool,
     skip_ansys: bool,
+    material_config_file: Path,
 ) -> None:
     """Run the complete CAD export and optional Ansys analysis for one point."""
     step_file = step_path_for(point)
@@ -442,6 +618,10 @@ def run_orientation(
             str(part_mesh_size_mm),
             "--base-mesh-size-mm",
             str(base_mesh_size_mm),
+            "--material-config",
+            str(material_config_file),
+            "--results-csv",
+            str(ORIENTATION_RESULTS_CSV),
             "--result-file",
             str(result_file),
         ],
@@ -477,6 +657,7 @@ def write_run_manifest(
     symmetry_axis: str | None = None,
     symmetry_repeats: int = 1,
     contour_starts: int = 0,
+    run_metadata: dict[str, object] | None = None,
 ) -> None:
     manifest = {
         "project_root": str(PROJECT_ROOT),
@@ -498,6 +679,7 @@ def write_run_manifest(
         "contour_starts": contour_starts,
         "step_output_dir": str(STEP_OUTPUT_DIR),
         "results_dir": str(RESULTS_DIR),
+        **(run_metadata or {}),
         "points": [
             {
                 **asdict(point),
@@ -517,6 +699,43 @@ def write_run_manifest(
         print(f"\nDry-run manifest written to: {manifest_path}")
     else:
         print(f"\nRun manifest written to: {manifest_path}")
+
+
+def format_runtime(seconds: float) -> str:
+    total = max(0, int(round(seconds)))
+    hours, remainder = divmod(total, 3600)
+    minutes, secs = divmod(remainder, 60)
+    if hours:
+        return f"{hours} h {minutes} m {secs} s"
+    if minutes:
+        return f"{minutes} m {secs} s"
+    return f"{secs} s"
+
+
+def write_post_run_outputs(metadata: dict[str, object]) -> None:
+    """Write the human summary and contour map after a completed run."""
+    from analyze_orientation_results import (
+        choose_slice,
+        load_observations,
+        write_contour_svg,
+        write_summary,
+    )
+
+    observations = load_observations(RESULTS_DIR)
+    selected_rz, selected = choose_slice(observations, None)
+    if not selected:
+        print("No successful stress results; run summary and contour map were not generated.")
+        return
+    contour_path = RESULTS_DIR / "orientation_contour_map.svg"
+    contour_png_path = RESULTS_DIR / "orientation_contour_map.png"
+    summary_path = RESULTS_DIR / "run_summary.txt"
+    write_contour_svg(contour_path, selected, "average", selected_rz)
+    render_svg_png(contour_path, contour_png_path)
+    write_summary(summary_path, observations, "average", selected_rz, contour_path, metadata)
+    print(f"Run summary written to: {summary_path}")
+    print(f"Contour map written to: {contour_path}")
+    if contour_png_path.exists():
+        print(f"Contour map PNG written to: {contour_png_path}")
 
 
 def parse_args() -> argparse.Namespace:
@@ -552,6 +771,25 @@ def parse_args() -> argparse.Namespace:
         "--base-mesh-size-mm",
         type=float,
         help="Base mesh element size in millimeters; otherwise ask in a popup.",
+    )
+    parser.add_argument(
+        "--material",
+        choices=("inconel_718", "316l_stainless_steel", "ti_6al_4v"),
+        default=None,
+        help="Material configuration; if omitted, show the material-selection popup.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        help=(
+            "Directory for generated_steps, results, CSV, screenshots, maps, and summaries. "
+            "If omitted, use the project folders."
+        ),
+    )
+    parser.add_argument(
+        "--optimizer-config",
+        type=Path,
+        help="One-row CSV containing Sobol and contour stopping settings.",
     )
     parser.add_argument(
         "--optimize",
@@ -665,6 +903,13 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    args = load_optimizer_config(args, args.optimizer_config)
+    run_started_at = datetime.now(timezone.utc)
+    run_timer_start = time.perf_counter()
+    output_dir = configure_output_directory(args.output_dir)
+    selected_material_id = args.material or choose_material()
+    material_config = load_material_config(selected_material_id)
+    material_config_file = Path(material_config["config_path"])
 
     part_file = (
         Path(args.part_file).expanduser().resolve()
@@ -701,6 +946,13 @@ def main() -> int:
         "Selected mesh sizes: "
         f"part={part_mesh_size_mm} mm, base={base_mesh_size_mm} mm"
     )
+    print(
+        "Selected material: "
+        f"{material_config['display_name']} "
+        f"(part={material_config['ansys_part_material']}, "
+        f"base={material_config['ansys_base_material']})"
+    )
+    print(f"Output directory: {output_dir}")
 
     # Contour mode is now the normal workflow. --optimize remains available
     # for users who want the older global Bayesian expected-improvement path.
@@ -817,6 +1069,7 @@ def main() -> int:
                 base_mesh_size_mm,
                 args.dry_run,
                 args.skip_ansys,
+                material_config_file,
             )
             optimization_points.append(point)
             if not args.dry_run:
@@ -873,6 +1126,29 @@ def main() -> int:
                     )
                     break
 
+        run_completed_at = datetime.now(timezone.utc)
+        total_runtime_seconds = time.perf_counter() - run_timer_start
+        run_metadata = {
+            "run_started_at_utc": run_started_at.isoformat(),
+            "run_completed_at_utc": run_completed_at.isoformat(),
+            "total_runtime_seconds": round(total_runtime_seconds, 3),
+            "total_runtime": format_runtime(total_runtime_seconds),
+            "part_file": str(part_file),
+            "part_mesh_size_mm": part_mesh_size_mm,
+            "base_mesh_size_mm": base_mesh_size_mm,
+            "workflow": "Sobol initialization + multi-start contour refinement"
+            if contour_mode
+            else "Bayesian expected improvement",
+            "maximum_evaluations": args.optimization_iterations,
+            "solver_cores": 16,
+            "material": {
+                "id": material_config["id"],
+                "display_name": material_config["display_name"],
+                "ansys_part_material": material_config["ansys_part_material"],
+                "ansys_base_material": material_config["ansys_base_material"],
+                "config_path": str(material_config_file),
+            },
+        }
         write_run_manifest(
             optimization_points,
             part_file,
@@ -884,7 +1160,10 @@ def main() -> int:
             symmetry_axis if contour_mode else None,
             symmetry_repeats if contour_mode else 1,
             args.contour_starts if contour_mode else 0,
+            run_metadata,
         )
+        if not args.dry_run:
+            write_post_run_outputs(run_metadata)
         return 0
 
 
