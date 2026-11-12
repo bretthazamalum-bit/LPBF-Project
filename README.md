@@ -329,6 +329,13 @@ The provided settings retain 8 Sobol evaluations, use one contour refinement
 start, and stop after five consecutive evaluations improve the best stress by
 less than 1%, subject to the minimum evaluation count and the per-row maximum.
 
+ANSYS LPBF process settings are kept separately in `process_settings.csv`.
+This includes solver cores, layer/deposition thickness, hatch spacing, scan
+speed, dwell time, build and cooldown temperatures, base temperature, raster
+angles, stripe width, beam power, beam diameter, absorptivity, and heat-source
+count. The batch runner loads it automatically; use `--process-config` to select
+another process file.
+
 It runs cases sequentially and derives a unique folder from the run name,
 part, material, part mesh, and base mesh. A 1 mm and 2 mm case for the same
 part therefore receive separate output folders automatically.

@@ -29,11 +29,12 @@ from lpbf.config import (
 from lpbf.script_loader import (
     DELETE_GEOMETRY_SCRIPT,
     RESULTS_SCRIPT,
-    SOLVE_SCRIPT,
     import_geometry_script,
     mesh_script,
+    solve_script,
 )
 from lpbf.material_config import load_material_config
+from lpbf.process_config import load_process_config
 from lpbf.session import (
     MECHANICAL_EXECUTABLE,
     MECHANICAL_VERSION,
@@ -221,6 +222,7 @@ def write_result_file(args: argparse.Namespace, stress_results: dict, *, status:
             "ansys_base_material": args.material_config_data["ansys_base_material"],
             "config_path": args.material_config_data["config_path"],
         },
+        "process": args.process_config_data,
         "status": status,
         "step_file": str(Path(args.step_file).resolve()),
         "rotation_degrees": {
@@ -262,6 +264,11 @@ def parse_args() -> argparse.Namespace:
         help="JSON material configuration; defaults to materials/inconel_718.json.",
     )
     parser.add_argument(
+        "--process-config",
+        default=None,
+        help="CSV process settings; defaults to process_settings.csv.",
+    )
+    parser.add_argument(
         "--screenshot-file",
         help="PNG path for the equivalent-stress viewport image.",
     )
@@ -281,6 +288,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     args.material_config_data = load_material_config(args.material_config)
+    args.process_config_data = load_process_config(args.process_config)
     step_file = Path(args.step_file).resolve()
     started_at = datetime.now(timezone.utc).isoformat()
 
@@ -331,6 +339,14 @@ def main() -> int:
             f"(part={args.material_config_data['ansys_part_material']}, "
             f"base={args.material_config_data['ansys_base_material']})"
         )
+        print(
+            "process="
+            f"{args.process_config_data['config_name']} "
+            f"(scan={args.process_config_data['scan_speed_mm_s']} mm/s, "
+            f"layer={args.process_config_data['deposition_thickness_mm']} mm, "
+            f"hatch={args.process_config_data['hatch_spacing_mm']} mm, "
+            f"preheat={args.process_config_data['preheat_temperature_c']} C)"
+        )
 
         print("template opened in visible Mechanical GUI")
         # Do not issue a separate Project.Save() here.  In the visible
@@ -350,7 +366,7 @@ def main() -> int:
                 args.material_config_data["ansys_base_material"],
             ),
         )
-        run_stage(mechanical_session, "solving analyses", SOLVE_SCRIPT)
+        run_stage(mechanical_session, "solving analyses", solve_script(args.process_config_data))
 
         screenshot_literal = repr(str(screenshot_file)) if screenshot_file else "None"
         raw_result = execute_writable_script(

@@ -22,6 +22,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 SOLIDWORKS_DIR = PROJECT_ROOT / "Solidworks"
 ANSYS_DIR = PROJECT_ROOT / "ANSYS"
 MATERIALS_DIR = PROJECT_ROOT / "materials"
+PROCESS_SETTINGS_FILE = PROJECT_ROOT / "process_settings.csv"
 PROJECT_PYTHON = (
     PROJECT_ROOT / ".venv" / "Scripts" / "python.exe"
     if (PROJECT_ROOT / ".venv" / "Scripts" / "python.exe").exists()
@@ -579,6 +580,7 @@ def run_orientation(
     dry_run: bool,
     skip_ansys: bool,
     material_config_file: Path,
+    process_config_file: Path,
 ) -> None:
     """Run the complete CAD export and optional Ansys analysis for one point."""
     step_file = step_path_for(point)
@@ -620,6 +622,8 @@ def run_orientation(
             str(base_mesh_size_mm),
             "--material-config",
             str(material_config_file),
+            "--process-config",
+            str(process_config_file),
             "--results-csv",
             str(ORIENTATION_RESULTS_CSV),
             "--result-file",
@@ -787,6 +791,12 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--process-config",
+        type=Path,
+        default=PROCESS_SETTINGS_FILE,
+        help="CSV containing ANSYS LPBF process settings.",
+    )
+    parser.add_argument(
         "--optimizer-config",
         type=Path,
         help="One-row CSV containing Sobol and contour stopping settings.",
@@ -910,6 +920,12 @@ def main() -> int:
     selected_material_id = args.material or choose_material()
     material_config = load_material_config(selected_material_id)
     material_config_file = Path(material_config["config_path"])
+    process_config_file = args.process_config.expanduser()
+    if not process_config_file.is_absolute():
+        process_config_file = PROJECT_ROOT / process_config_file
+    process_config_file = process_config_file.resolve()
+    if not process_config_file.is_file():
+        raise FileNotFoundError(f"Process settings CSV not found: {process_config_file}")
 
     part_file = (
         Path(args.part_file).expanduser().resolve()
@@ -1070,6 +1086,7 @@ def main() -> int:
                 args.dry_run,
                 args.skip_ansys,
                 material_config_file,
+                process_config_file,
             )
             optimization_points.append(point)
             if not args.dry_run:

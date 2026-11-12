@@ -20,7 +20,7 @@ if solver_configuration is None:
     raise Exception("Could not find a default Ansys solve configuration.")
 
 solver_configuration.SetAsDefault()
-solver_configuration.SolveProcessSettings.MaxNumberOfCores = 16
+solver_configuration.SolveProcessSettings.MaxNumberOfCores = __SOLVER_CORES__
 ExtAPI.Log.WriteMessage(
     "Ansys solver configuration=My Computer; distributed=False; maximum cores="
     + str(solver_configuration.SolveProcessSettings.MaxNumberOfCores)
@@ -39,16 +39,42 @@ for am_child in am_process.Children:
 if am_build_settings is None:
     raise Exception("Could not find AM Process Build Settings.")
 
-am_build_settings.DepositionThickness = Quantity("0.03 [mm]")
-am_build_settings.HatchSpacing = Quantity("0.07 [mm]")
-am_build_settings.ScanSpeed = Quantity("1000 [mm sec^-1]")
-am_build_settings.DwellTime = Quantity("10 [sec]")
-am_build_settings.PreheatTemperature = Quantity("170 [C]")
-am_build_settings.RoomTemperature = Quantity("21 [C]")
-am_build_settings.BuildGasTemperature = Quantity("170 [C]")
-am_build_settings.BuildPowderTemperature = Quantity("170 [C]")
-am_build_settings.CooldownGasTemperature = Quantity("21 [C]")
-am_build_settings.CooldownPowderTemperature = Quantity("21 [C]")
+am_build_settings.DepositionThickness = Quantity("__DEPOSITION_THICKNESS__ [mm]")
+am_build_settings.HatchSpacing = Quantity("__HATCH_SPACING__ [mm]")
+am_build_settings.ScanSpeed = Quantity("__SCAN_SPEED__ [mm sec^-1]")
+am_build_settings.DwellTime = Quantity("__DWELL_TIME__ [sec]")
+am_build_settings.PreheatTemperature = Quantity("__PREHEAT_TEMPERATURE__ [C]")
+am_build_settings.RoomTemperature = Quantity("__ROOM_TEMPERATURE__ [C]")
+am_build_settings.BuildGasTemperature = Quantity("__BUILD_GAS_TEMPERATURE__ [C]")
+am_build_settings.BuildPowderTemperature = Quantity("__BUILD_POWDER_TEMPERATURE__ [C]")
+am_build_settings.CooldownGasTemperature = Quantity("__COOLDOWN_GAS_TEMPERATURE__ [C]")
+am_build_settings.CooldownPowderTemperature = Quantity("__COOLDOWN_POWDER_TEMPERATURE__ [C]")
+
+def set_optional_build_setting(attribute_name, value, label):
+    try:
+        setattr(am_build_settings, attribute_name, value)
+        ExtAPI.Log.WriteMessage("Applied " + label + ": " + str(value))
+    except Exception as error:
+        ExtAPI.Log.WriteMessage("Could not set optional " + label + ": " + str(error))
+
+
+set_optional_build_setting(
+    "StartLayerAngle", Quantity("__START_LAYER_ANGLE__ [deg]"), "start layer angle"
+)
+set_optional_build_setting(
+    "LayerRotationAngle", Quantity("__LAYER_ROTATION_ANGLE__ [deg]"), "layer rotation angle"
+)
+set_optional_build_setting(
+    "ScanStripeWidth", Quantity("__SCAN_STRIPE_WIDTH__ [mm]"), "scan stripe width"
+)
+set_optional_build_setting("BeamPower", Quantity("__BEAM_POWER__ [W]"), "beam power")
+set_optional_build_setting(
+    "BeamDiameter", Quantity("__BEAM_DIAMETER__ [mm]"), "beam diameter"
+)
+set_optional_build_setting("Absorptivity", __ABSORPTIVITY__, "absorptivity")
+set_optional_build_setting(
+    "NumberOfHeatSources", __NUMBER_OF_HEAT_SOURCES__, "number of heat sources"
+)
 
 # Keep the AM process display/deposition layer height consistent with the
 # report's 30-micron deposition thickness where the property is available.
@@ -58,15 +84,16 @@ except Exception as error:
     ExtAPI.Log.WriteMessage("Could not set AM process LayerHeight: " + str(error))
 
 ExtAPI.Log.WriteMessage(
-    "Applied IN718 process settings: deposition=0.03 mm; hatch=0.07 mm; "
-    "scan=1000 mm/s; dwell=10 s; preheat/gas/powder=170 C; "
-    "room/cooldown=21 C"
+    "Applied CSV process settings: deposition=" + str(am_build_settings.DepositionThickness)
+    + "; hatch=" + str(am_build_settings.HatchSpacing)
+    + "; scan=" + str(am_build_settings.ScanSpeed)
+    + "; dwell=" + str(am_build_settings.DwellTime)
 )
 
 temperature_load = DataModel.GetObjectsByName("Temperature")[0]
 temperature_load.Location = base_selection
-temperature_load.Magnitude = Quantity("170 [C]")
-ExtAPI.Log.WriteMessage("Applied build-phase base temperature: 170 C")
+temperature_load.Magnitude = Quantity("__BASE_TEMPERATURE__ [C]")
+ExtAPI.Log.WriteMessage("Applied build-phase base temperature from CSV.")
 
 
 def point_coordinates(point):

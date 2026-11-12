@@ -1,0 +1,2 @@
+config_name,solver_cores,deposition_thickness_mm,hatch_spacing_mm,scan_speed_mm_s,dwell_time_s,preheat_temperature_c,room_temperature_c,build_gas_temperature_c,build_powder_temperature_c,cooldown_gas_temperature_c,cooldown_powder_temperature_c,base_temperature_c,start_layer_angle_deg,layer_rotation_angle_deg,scan_stripe_width_mm,beam_power_w,beam_diameter_mm,absorptivity,number_of_heat_sources
+inconel_718_default,16,0.03,0.07,1000,10,170,21,170,170,21,21,170,0,67,10,180,0.1,0.35,1

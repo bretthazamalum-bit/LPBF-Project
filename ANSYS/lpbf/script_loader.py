@@ -25,6 +25,32 @@ SOLVE_SCRIPT = load_mechanical_script("solve_analyses.py")
 RESULTS_SCRIPT = load_mechanical_script("collect_results.py")
 
 
+def solve_script(process_settings: dict) -> str:
+    """Load the solve stage with values from process_settings.csv."""
+    replacements = {
+        "__SOLVER_CORES__": str(process_settings["solver_cores"]),
+        "__DEPOSITION_THICKNESS__": f'{process_settings["deposition_thickness_mm"]:.12g}',
+        "__HATCH_SPACING__": f'{process_settings["hatch_spacing_mm"]:.12g}',
+        "__SCAN_SPEED__": f'{process_settings["scan_speed_mm_s"]:.12g}',
+        "__DWELL_TIME__": f'{process_settings["dwell_time_s"]:.12g}',
+        "__PREHEAT_TEMPERATURE__": f'{process_settings["preheat_temperature_c"]:.12g}',
+        "__ROOM_TEMPERATURE__": f'{process_settings["room_temperature_c"]:.12g}',
+        "__BUILD_GAS_TEMPERATURE__": f'{process_settings["build_gas_temperature_c"]:.12g}',
+        "__BUILD_POWDER_TEMPERATURE__": f'{process_settings["build_powder_temperature_c"]:.12g}',
+        "__COOLDOWN_GAS_TEMPERATURE__": f'{process_settings["cooldown_gas_temperature_c"]:.12g}',
+        "__COOLDOWN_POWDER_TEMPERATURE__": f'{process_settings["cooldown_powder_temperature_c"]:.12g}',
+        "__BASE_TEMPERATURE__": f'{process_settings["base_temperature_c"]:.12g}',
+        "__LAYER_ROTATION_ANGLE__": f'{process_settings["layer_rotation_angle_deg"]:.12g}',
+        "__START_LAYER_ANGLE__": f'{process_settings["start_layer_angle_deg"]:.12g}',
+        "__SCAN_STRIPE_WIDTH__": f'{process_settings["scan_stripe_width_mm"]:.12g}',
+        "__BEAM_POWER__": f'{process_settings["beam_power_w"]:.12g}',
+        "__BEAM_DIAMETER__": f'{process_settings["beam_diameter_mm"]:.12g}',
+        "__ABSORPTIVITY__": f'{process_settings["absorptivity"]:.12g}',
+        "__NUMBER_OF_HEAT_SOURCES__": str(process_settings["number_of_heat_sources"]),
+    }
+    return load_mechanical_script("solve_analyses.py", replacements)
+
+
 def import_geometry_script(step_file: Path) -> str:
     return load_mechanical_script(
         "import_geometry.py",

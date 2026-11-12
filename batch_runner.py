@@ -20,6 +20,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 MAIN_SCRIPT = PROJECT_ROOT / "main.py"
 DEFAULT_OUTPUT_ROOT = PROJECT_ROOT / "runs"
 DEFAULT_OPTIMIZER_CONFIG = PROJECT_ROOT / "optimizer_settings.csv"
+DEFAULT_PROCESS_CONFIG = PROJECT_ROOT / "process_settings.csv"
 REQUIRED_COLUMNS = {
     "run_name",
     "part_file",
@@ -93,6 +94,7 @@ def build_command(
     *,
     dry_run: bool,
     optimizer_config: Path | None,
+    process_config: Path | None,
 ) -> list[str]:
     part_file = Path(row["part_file"]).expanduser()
     if not part_file.is_absolute():
@@ -115,6 +117,8 @@ def build_command(
     ]
     if optimizer_config is not None:
         command.extend(("--optimizer-config", str(optimizer_config.resolve())))
+    if process_config is not None:
+        command.extend(("--process-config", str(process_config.resolve())))
     if dry_run:
         command.append("--dry-run")
     return command
@@ -133,6 +137,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=DEFAULT_OPTIMIZER_CONFIG,
         help="Separate one-row CSV with Sobol/contour settings.",
+    )
+    parser.add_argument(
+        "--process-config",
+        type=Path,
+        default=DEFAULT_PROCESS_CONFIG,
+        help="Separate one-row CSV with ANSYS LPBF process settings.",
     )
     parser.add_argument("--dry-run", action="store_true", help="Print/run main.py in dry-run mode.")
     parser.add_argument("--continue-on-error", action="store_true")
@@ -161,6 +171,14 @@ def main() -> int:
         if not optimizer_config.is_file():
             raise FileNotFoundError(f"Optimizer configuration not found: {optimizer_config}")
 
+    process_config = args.process_config.expanduser() if args.process_config else None
+    if process_config is not None:
+        if not process_config.is_absolute():
+            process_config = PROJECT_ROOT / process_config
+        process_config = process_config.resolve()
+        if not process_config.is_file():
+            raise FileNotFoundError(f"Process settings CSV not found: {process_config}")
+
     with csv_path.open(newline="", encoding="utf-8-sig") as handle:
         reader = csv.DictReader(handle)
         columns = set(reader.fieldnames or [])
@@ -183,6 +201,7 @@ def main() -> int:
             output_dir,
             dry_run=args.dry_run,
             optimizer_config=optimizer_config,
+            process_config=process_config,
         )
         print(f"\n=== Batch case {index}/{len(rows)}: {row['run_name']} ===")
         print(f"Output folder: {output_dir}")
